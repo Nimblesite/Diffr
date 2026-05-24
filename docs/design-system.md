@@ -60,21 +60,18 @@ The Diffy mark should communicate comparison, pairing, and code review without l
 
 The current logo set is raster-only. There is no SVG source for these assets. Each icon is built from flat geometric shapes, hard color boundaries, and no text, so a future vector conversion can trace the shapes cleanly.
 
+The whole set is rendered from the same primary mark — there are no alternate concepts in the current shipping set. Pick the size closest to the target rendering surface; the root `icon.png` is byte-identical to the 128 px export.
+
 Current assets:
 
-| Asset                                                      | Format | Use                          |
-| ---------------------------------------------------------- | ------ | ---------------------------- |
-| [Contact sheet](assets/diffy-icon-contact-sheet.png)       | PNG    | Compare all current concepts |
-| [Contact sheet WebP](assets/diffy-icon-contact-sheet.webp) | WebP   | Lightweight concept preview  |
-| [Primary 128](assets/diffy-icon-primary-128.png)           | PNG    | Root extension icon source   |
-| [Primary 256](assets/diffy-icon-primary-256.png)           | PNG    | Marketplace and docs         |
-| [Primary 512](assets/diffy-icon-primary-512.png)           | PNG    | High-resolution export       |
-| [Primary WebP](assets/diffy-icon-primary.webp)             | WebP   | Website asset                |
-| [Brackets WebP](assets/diffy-icon-brackets.webp)           | WebP   | Alternate concept            |
-| [Panes WebP](assets/diffy-icon-panes.webp)                 | WebP   | Alternate concept            |
-| [Delta WebP](assets/diffy-icon-delta.webp)                 | WebP   | Alternate concept            |
-| [Gutter WebP](assets/diffy-icon-gutter.webp)               | WebP   | Alternate concept            |
-| Root extension icon: `icon.png`                            | PNG    | VS Code package icon         |
+| Asset                                              | Format | Use                          |
+| -------------------------------------------------- | ------ | ---------------------------- |
+| [Primary 128](assets/diffy-icon-primary-128.png)   | PNG    | Root extension icon source   |
+| [Primary 256](assets/diffy-icon-primary-256.png)   | PNG    | Marketplace and docs         |
+| [Primary 512](assets/diffy-icon-primary-512.png)   | PNG    | High-resolution export       |
+| [Primary 1024](assets/diffy-icon-primary-1024.png) | PNG    | Print, hero, and zoom assets |
+| [Primary WebP](assets/diffy-icon-primary.webp)     | WebP   | Compressed website asset     |
+| Root extension icon: `icon.png`                    | PNG    | VS Code package icon         |
 
 Preferred concepts:
 
