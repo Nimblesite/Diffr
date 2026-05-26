@@ -318,7 +318,7 @@ describe("Diffy commands — end-to-end through real QuickPick UI", () => {
     const diffTab = await waitForDiffTab();
     const uris = tabInputUris(diffTab);
     assert.match(uris.left.toString(), new RegExp(`diffy://commit/${shas.first}/dir/c\\.txt$`));
-    assert.match(uris.right.fsPath, /dir\/c\.txt$/);
+    assert.match(uris.right.fsPath.replace(/\\/g, "/"), /dir\/c\.txt$/);
 
     await flow;
   });

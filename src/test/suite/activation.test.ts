@@ -32,7 +32,7 @@ describe("activation", () => {
     assert.equal(folders.length, 1);
     const folder = folders[0];
     assert.ok(folder);
-    assert.match(folder.uri.fsPath, /repo-seed\/workspace$/);
+    assert.match(folder.uri.fsPath.replace(/\\/g, "/"), /repo-seed\/workspace$/);
   });
 
   it("shows logs command opens the Diffy OutputChannel without errors", async () => {
