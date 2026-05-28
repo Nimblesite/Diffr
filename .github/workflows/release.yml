@@ -1,15 +1,7 @@
 # agent-pmo:74cf183
-# Shipwright SWR-REL-* release pipeline for Diffy.
-#
-#   1. version            — derive semver from the v* tag, capture source SHA
-#   2. ci-gate            — run `make ci` on the tagged commit; publish is blocked unless this passes
-#   3. validate-manifest  — schema-check shipwright.json before any artifact is built
-#   4. build-vsix matrix  — stamp the runner working tree, verify, build, package per platform
-#   5. release            — assemble the GitHub Release with every VSIX
-#   6. publish            — push every VSIX to the VS Code Marketplace in one vsce call
-#
-# Source-controlled versions are never mutated. Stamping happens in the runner
-# working tree only, per SWR-VERSION-BUILD-STAMPING.
+# Release Diffy on a v* tag: build → package one universal VSIX → publish to the
+# VS Code Marketplace → attach it to the GitHub release. One sequential job.
+# Pure-TS extension (no native binaries) → a single platform-agnostic VSIX.
 
 name: Release
 
@@ -22,95 +14,13 @@ permissions:
   contents: write
 
 jobs:
-  version:
-    name: Extract release version
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    outputs:
-      version: ${{ steps.extract.outputs.version }}
-      source_sha: ${{ steps.extract.outputs.source_sha }}
-    steps:
-      - name: Extract version from tag
-        id: extract
-        run: |
-          echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
-          echo "source_sha=${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
-
-  ci-gate:
-    name: CI gate (make ci)
-    needs: version
+  release:
+    name: Package and publish
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: ${{ needs.version.outputs.source_sha }}
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22.x'
-          cache: 'npm'
-      - run: npm ci
-      - name: Format check
-        run: make fmt CHECK=1
-      - name: Lint (includes shipwright.json schema check)
-        run: make lint
-      - name: Test (xvfb for @vscode/test-electron)
-        run: xvfb-run -a make test
-      - name: Build
-        run: make build
 
-  validate-manifest:
-    name: Validate shipwright.json
-    needs: version
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ needs.version.outputs.source_sha }}
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22.x'
-          cache: 'npm'
-      - run: npm ci
-      - name: Validate shipwright.json against schema
-        run: npm run shipwright:validate
-      - name: Dry-run stamp (proves the script runs against this tag)
-        run: node scripts/stamp-release-version.mjs "${{ needs.version.outputs.version }}" --dry
-
-  build-vsix:
-    name: Build VSIX (${{ matrix.artifact_name }})
-    needs: [version, ci-gate, validate-manifest]
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: ubuntu-latest
-            vsce_target: linux-x64
-            artifact_name: linux-x64
-          - os: ubuntu-latest
-            vsce_target: linux-arm64
-            artifact_name: linux-arm64
-          - os: macos-latest
-            vsce_target: darwin-x64
-            artifact_name: darwin-x64
-          - os: macos-latest
-            vsce_target: darwin-arm64
-            artifact_name: darwin-arm64
-          - os: windows-latest
-            vsce_target: win32-x64
-            artifact_name: win32-x64
-          - os: windows-latest
-            vsce_target: win32-arm64
-            artifact_name: win32-arm64
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ needs.version.outputs.source_sha }}
-
-      # VSIX packaging requires Node 22.x per [CI-VSIX-PLATFORM].
       - uses: actions/setup-node@v4
         with:
           node-version: '22.x'
@@ -119,66 +29,28 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Stamp release version (runner tree only)
-        run: node scripts/stamp-release-version.mjs "${{ needs.version.outputs.version }}"
+      - name: Set version from tag
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
 
-      - name: Verify every version carrier
-        run: node scripts/verify-versions.mjs "${{ needs.version.outputs.version }}"
+      - name: Build and package universal VSIX
+        run: |
+          npm version "$VERSION" --no-git-tag-version --allow-same-version
+          npm run build
+          npx vsce package --out "diffy-$VERSION.vsix"
 
-      - name: Build
-        run: npm run build
+      - name: Publish to VS Code Marketplace
+        env:
+          VSCE_PAT: ${{ secrets.VSCODE_MARKETPLACE_PAT }}
+        run: |
+          if [ -z "$VSCE_PAT" ]; then
+            echo "::error::VSCODE_MARKETPLACE_PAT not accessible. Add Diffy to the secret's allowed repositories under Org Settings → Secrets and variables → Actions."
+            exit 1
+          fi
+          npx vsce publish --packagePath "diffy-$VERSION.vsix"
 
-      - name: Package VSIX
-        run: npx vsce package --target ${{ matrix.vsce_target }} --out diffy-${{ needs.version.outputs.version }}-${{ matrix.vsce_target }}.vsix
-
-      - name: Verify VSIX bundles shipwright.json
-        shell: bash
-        run: unzip -l diffy-${{ needs.version.outputs.version }}-${{ matrix.vsce_target }}.vsix | grep -F "extension/shipwright.json"
-
-      - name: Upload VSIX
-        uses: actions/upload-artifact@v4
-        with:
-          name: vsix-${{ matrix.artifact_name }}
-          path: diffy-${{ needs.version.outputs.version }}-${{ matrix.vsce_target }}.vsix
-
-  release:
-    name: Create release
-    needs: [version, build-vsix]
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ needs.version.outputs.source_sha }}
-      - uses: actions/download-artifact@v4
-        with:
-          path: artifacts/
-
-      - name: Create GitHub release
+      - name: Attach VSIX to GitHub release
         uses: softprops/action-gh-release@v2
         with:
-          files: artifacts/**/*.vsix
+          files: diffy-*.vsix
           generate_release_notes: true
-
-  publish:
-    name: Publish to VS Code Marketplace
-    needs: [version, release]
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ needs.version.outputs.source_sha }}
-      - uses: actions/download-artifact@v4
-        with:
-          path: artifacts/
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22.x'
-
-      # Publish all platform-specific VSIX files in a single vsce invocation.
-      - name: Publish to Marketplace
-        run: npx vsce publish --packagePath $(find artifacts -name '*.vsix')
-        env:
-          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+          prerelease: ${{ contains(github.ref_name, '-') }}

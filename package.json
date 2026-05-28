@@ -10,14 +10,34 @@
     "type": "git",
     "url": "https://github.com/MelbourneDeveloper/Diffy.git"
   },
+  "bugs": {
+    "url": "https://github.com/MelbourneDeveloper/Diffy/issues"
+  },
+  "homepage": "https://github.com/MelbourneDeveloper/Diffy#readme",
   "main": "./out/extension.js",
   "engines": {
     "vscode": "^1.85.0",
     "node": ">=20"
   },
   "categories": [
+    "Other",
     "SCM Providers"
   ],
+  "keywords": [
+    "git",
+    "diff",
+    "compare",
+    "commits",
+    "branches",
+    "tags",
+    "working copy",
+    "history",
+    "scm"
+  ],
+  "galleryBanner": {
+    "color": "#1e1e1e",
+    "theme": "dark"
+  },
   "activationEvents": [
     "onStartupFinished"
   ],

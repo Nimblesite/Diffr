@@ -13,12 +13,12 @@
       "kind": "extension-vscode",
       "language": "typescript",
       "expectedVersion": "${PRODUCT_VERSION}",
-      "platforms": ["darwin-arm64", "darwin-x64", "linux-arm64", "linux-x64", "win32-arm64", "win32-x64"]
+      "platforms": ["all"]
     }
   ],
   "hosts": {
     "vscode": {
-      "artifact": "vsix-per-platform",
+      "artifact": "vsix-fat",
       "onMismatch": "error"
     }
   }
