@@ -1,19 +1,34 @@
-export const SCHEME = "diffly";
+// The product name lives here ONCE. Every command id, context key, memento key,
+// menu group, title prefix, URI scheme, and channel label derives from it.
+const PUBLISHER = "nimblesite";
+const BRAND_ID = "diffr";
+const BRAND_NAME = "Diffr";
 
-export const OUTPUT_CHANNEL_NAME = "Diffly";
+const ns = (suffix: string): string => `${BRAND_ID}.${suffix}`;
+
+export const EXTENSION_ID = `${PUBLISHER}.${BRAND_ID}`;
+
+export const ENV_VARS = {
+  logLevel: `${BRAND_ID.toUpperCase()}_LOG_LEVEL`,
+  e2e: `${BRAND_ID.toUpperCase()}_E2E`,
+} as const;
+
+export const SCHEME = BRAND_ID;
+
+export const OUTPUT_CHANNEL_NAME = BRAND_NAME;
 
 export const COMMAND_IDS = {
-  compareWith: "diffly.compareWith",
-  compareWithWorkingCopy: "diffly.compareWithWorkingCopy",
-  compareWithPrevious: "diffly.compareWithPrevious",
-  compareWithBranch: "diffly.compareWithBranch",
-  compareWithTag: "diffly.compareWithTag",
-  compareTwoCommits: "diffly.compareTwoCommits",
-  compareFileWithCommit: "diffly.compareFileWithCommit",
-  compareFileWithBranch: "diffly.compareFileWithBranch",
-  compareFileWithTag: "diffly.compareFileWithTag",
-  reopenLast: "diffly.reopenLast",
-  showLogs: "diffly.showLogs",
+  compareWith: ns("compareWith"),
+  compareWithWorkingCopy: ns("compareWithWorkingCopy"),
+  compareWithPrevious: ns("compareWithPrevious"),
+  compareWithBranch: ns("compareWithBranch"),
+  compareWithTag: ns("compareWithTag"),
+  compareTwoCommits: ns("compareTwoCommits"),
+  compareFileWithCommit: ns("compareFileWithCommit"),
+  compareFileWithBranch: ns("compareFileWithBranch"),
+  compareFileWithTag: ns("compareFileWithTag"),
+  reopenLast: ns("reopenLast"),
+  showLogs: ns("showLogs"),
 } as const;
 
 export const BUILT_IN_COMMANDS = {
@@ -22,11 +37,11 @@ export const BUILT_IN_COMMANDS = {
 } as const;
 
 export const CONTEXT_KEYS = {
-  gitAvailable: "diffly.gitAvailable",
+  gitAvailable: ns("gitAvailable"),
 } as const;
 
 export const MEMENTO_KEYS = {
-  lastComparison: "diffly.lastComparison",
+  lastComparison: ns("lastComparison"),
 } as const;
 
 export const URI_AUTHORITIES = {
@@ -110,9 +125,9 @@ export const MENU_WHEN = {
   never: "false",
 } as const;
 
-export const MENU_GROUP_PREFIX = "diffly";
+export const MENU_GROUP_PREFIX = BRAND_ID;
 
-export const TITLE_PREFIX = "Diffly:";
+export const TITLE_PREFIX = `${BRAND_NAME}:`;
 
 export const UI_TEXT = {
   workingCopy: "Working Copy",
@@ -134,7 +149,7 @@ export const UI_TEXT = {
   refLabel: "Ref",
   binaryStat: "binary",
   justNow: "just now",
-  noChanges: "Diffly: no changes between selected sides.",
+  noChanges: `${BRAND_NAME}: no changes between selected sides.`,
   pathArrow: "↔",
   pathDash: "—",
   bulletDot: "•",

@@ -1,6 +1,6 @@
 {
-  "name": "diffly",
-  "displayName": "Diffly",
+  "name": "diffr",
+  "displayName": "Diffr",
   "description": "Pick two things and diff them — context-menu git diffing in VSCode.",
   "version": "0.1.0",
   "publisher": "nimblesite",
@@ -8,12 +8,12 @@
   "icon": "icon.png",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Nimblesite/Diffly.git"
+    "url": "https://github.com/Nimblesite/Diffr.git"
   },
   "bugs": {
-    "url": "https://github.com/Nimblesite/Diffly/issues"
+    "url": "https://github.com/Nimblesite/Diffr/issues"
   },
-  "homepage": "https://github.com/Nimblesite/Diffly#readme",
+  "homepage": "https://github.com/Nimblesite/Diffr#readme",
   "main": "./out/extension.js",
   "engines": {
     "vscode": "^1.85.0",
@@ -50,152 +50,152 @@
   "contributes": {
     "commands": [
       {
-        "command": "diffly.compareWith",
-        "title": "Diffly: Compare with…"
+        "command": "diffr.compareWith",
+        "title": "Diffr: Compare with…"
       },
       {
-        "command": "diffly.compareWithWorkingCopy",
-        "title": "Diffly: Compare with Working Copy"
+        "command": "diffr.compareWithWorkingCopy",
+        "title": "Diffr: Compare with Working Copy"
       },
       {
-        "command": "diffly.compareWithPrevious",
-        "title": "Diffly: Compare with Previous"
+        "command": "diffr.compareWithPrevious",
+        "title": "Diffr: Compare with Previous"
       },
       {
-        "command": "diffly.compareWithBranch",
-        "title": "Diffly: Compare with Branch…"
+        "command": "diffr.compareWithBranch",
+        "title": "Diffr: Compare with Branch…"
       },
       {
-        "command": "diffly.compareWithTag",
-        "title": "Diffly: Compare with Tag…"
+        "command": "diffr.compareWithTag",
+        "title": "Diffr: Compare with Tag…"
       },
       {
-        "command": "diffly.compareTwoCommits",
-        "title": "Diffly: Compare Two Commits"
+        "command": "diffr.compareTwoCommits",
+        "title": "Diffr: Compare Two Commits"
       },
       {
-        "command": "diffly.compareFileWithCommit",
-        "title": "Diffly: Compare with Commit…"
+        "command": "diffr.compareFileWithCommit",
+        "title": "Diffr: Compare with Commit…"
       },
       {
-        "command": "diffly.compareFileWithBranch",
-        "title": "Diffly: Compare with Branch…"
+        "command": "diffr.compareFileWithBranch",
+        "title": "Diffr: Compare with Branch…"
       },
       {
-        "command": "diffly.compareFileWithTag",
-        "title": "Diffly: Compare with Tag…"
+        "command": "diffr.compareFileWithTag",
+        "title": "Diffr: Compare with Tag…"
       },
       {
-        "command": "diffly.reopenLast",
-        "title": "Diffly: Reopen Last Comparison"
+        "command": "diffr.reopenLast",
+        "title": "Diffr: Reopen Last Comparison"
       },
       {
-        "command": "diffly.showLogs",
-        "title": "Diffly: Show Logs"
+        "command": "diffr.showLogs",
+        "title": "Diffr: Show Logs"
       }
     ],
     "menus": {
       "scm/historyItem/context": [
         {
-          "command": "diffly.compareWith",
+          "command": "diffr.compareWith",
           "when": "scmProvider == git",
-          "group": "diffly@1"
+          "group": "diffr@1"
         },
         {
-          "command": "diffly.compareWithWorkingCopy",
+          "command": "diffr.compareWithWorkingCopy",
           "when": "scmProvider == git",
-          "group": "diffly@2"
+          "group": "diffr@2"
         },
         {
-          "command": "diffly.compareWithPrevious",
+          "command": "diffr.compareWithPrevious",
           "when": "scmProvider == git",
-          "group": "diffly@3"
+          "group": "diffr@3"
         },
         {
-          "command": "diffly.compareWithBranch",
+          "command": "diffr.compareWithBranch",
           "when": "scmProvider == git",
-          "group": "diffly@4"
+          "group": "diffr@4"
         },
         {
-          "command": "diffly.compareWithTag",
+          "command": "diffr.compareWithTag",
           "when": "scmProvider == git",
-          "group": "diffly@5"
+          "group": "diffr@5"
         }
       ],
       "scm/resourceState/context": [
         {
-          "command": "diffly.compareFileWithCommit",
+          "command": "diffr.compareFileWithCommit",
           "when": "scmProvider == git",
-          "group": "diffly@1"
+          "group": "diffr@1"
         },
         {
-          "command": "diffly.compareFileWithBranch",
+          "command": "diffr.compareFileWithBranch",
           "when": "scmProvider == git",
-          "group": "diffly@2"
+          "group": "diffr@2"
         },
         {
-          "command": "diffly.compareFileWithTag",
+          "command": "diffr.compareFileWithTag",
           "when": "scmProvider == git",
-          "group": "diffly@3"
+          "group": "diffr@3"
         }
       ],
       "editor/title/context": [
         {
-          "command": "diffly.compareFileWithCommit",
+          "command": "diffr.compareFileWithCommit",
           "when": "resourceScheme == file",
-          "group": "diffly@1"
+          "group": "diffr@1"
         },
         {
-          "command": "diffly.compareFileWithBranch",
+          "command": "diffr.compareFileWithBranch",
           "when": "resourceScheme == file",
-          "group": "diffly@2"
+          "group": "diffr@2"
         },
         {
-          "command": "diffly.compareFileWithTag",
+          "command": "diffr.compareFileWithTag",
           "when": "resourceScheme == file",
-          "group": "diffly@3"
+          "group": "diffr@3"
         }
       ],
       "explorer/context": [
         {
-          "command": "diffly.compareFileWithCommit",
+          "command": "diffr.compareFileWithCommit",
           "when": "resourceScheme == file && !explorerResourceIsFolder",
-          "group": "diffly@1"
+          "group": "diffr@1"
         },
         {
-          "command": "diffly.compareFileWithBranch",
+          "command": "diffr.compareFileWithBranch",
           "when": "resourceScheme == file && !explorerResourceIsFolder",
-          "group": "diffly@2"
+          "group": "diffr@2"
         },
         {
-          "command": "diffly.compareFileWithTag",
+          "command": "diffr.compareFileWithTag",
           "when": "resourceScheme == file && !explorerResourceIsFolder",
-          "group": "diffly@3"
+          "group": "diffr@3"
         }
       ],
       "commandPalette": [
         {
-          "command": "diffly.compareWith",
+          "command": "diffr.compareWith",
           "when": "false"
         },
         {
-          "command": "diffly.compareWithWorkingCopy",
+          "command": "diffr.compareWithWorkingCopy",
           "when": "false"
         },
         {
-          "command": "diffly.compareWithPrevious",
+          "command": "diffr.compareWithPrevious",
           "when": "false"
         },
         {
-          "command": "diffly.compareWithBranch",
+          "command": "diffr.compareWithBranch",
           "when": "false"
         },
         {
-          "command": "diffly.compareWithTag",
+          "command": "diffr.compareWithTag",
           "when": "false"
         },
         {
-          "command": "diffly.showLogs",
+          "command": "diffr.showLogs",
           "when": "false"
         }
       ]

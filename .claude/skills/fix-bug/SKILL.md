@@ -22,7 +22,7 @@ You MUST follow this exact workflow. Do NOT skip steps. Do NOT fix the bug befor
 - Write a test that **directly exercises the buggy behavior**
 - The test must assert the **correct/expected** behavior — so it FAILS against the current broken code
 - The test name should clearly describe the bug (e.g., `test_orange_color_not_applied_to_head`)
-- Use the project's existing test framework and conventions (Diffly uses mocha for unit and `@vscode/test-electron` for E2E — pick the right tier per CLAUDE.md)
+- Use the project's existing test framework and conventions (Diffr uses mocha for unit and `@vscode/test-electron` for E2E — pick the right tier per CLAUDE.md)
 
 ## Step 3: Run the Test — Confirm It FAILS
 

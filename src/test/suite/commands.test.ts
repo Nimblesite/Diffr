@@ -16,7 +16,7 @@ import {
   workspaceRoot,
 } from "./helpers";
 
-const EXTENSION_ID = "nimblesite.diffly";
+const EXTENSION_ID = "nimblesite.diffr";
 
 const ensureActivated = async (): Promise<void> => {
   const ext = vscode.extensions.getExtension(EXTENSION_ID);
@@ -36,7 +36,7 @@ const moveAndAccept = async (steps: number): Promise<void> => {
   await accept();
 };
 
-describe("Diffly commands — end-to-end through real QuickPick UI", () => {
+describe("Diffr commands — end-to-end through real QuickPick UI", () => {
   before(async () => {
     await ensureActivated();
   });
@@ -72,7 +72,7 @@ describe("Diffly commands — end-to-end through real QuickPick UI", () => {
   });
 
   it("compareFileWithCommit with a file outside any repo → warning, no diff", async () => {
-    const outside = vscode.Uri.file("/tmp/diffly-not-in-any-repo.txt");
+    const outside = vscode.Uri.file("/tmp/diffr-not-in-any-repo.txt");
     const before = allDiffTabs().length;
     await vscode.commands.executeCommand(COMMAND_IDS.compareFileWithCommit, outside);
     await tick(40);
@@ -117,9 +117,9 @@ describe("Diffly commands — end-to-end through real QuickPick UI", () => {
 
     const diffTab = await waitForDiffTab();
     const uris = tabInputUris(diffTab);
-    assert.equal(uris.left.scheme, "diffly");
+    assert.equal(uris.left.scheme, "diffr");
     assert.equal(uris.right.scheme, "file");
-    assert.match(uris.left.toString(), new RegExp(`diffly://commit/${shas.third}/`));
+    assert.match(uris.left.toString(), new RegExp(`diffr://commit/${shas.third}/`));
     assert.match(uris.right.fsPath, /a\.txt$/);
     assert.match(labelStrings(diffTab), /↔ Working Copy — a\.txt$/);
     assert.match(labelStrings(diffTab), new RegExp(`^${shas.third.slice(0, 7)}`));
@@ -141,8 +141,8 @@ describe("Diffly commands — end-to-end through real QuickPick UI", () => {
 
     const diffTab = await waitForDiffTab();
     const uris = tabInputUris(diffTab);
-    assert.equal(uris.left.scheme, "diffly");
-    assert.match(uris.left.toString(), new RegExp(`diffly://commit/${shas.first}/`));
+    assert.equal(uris.left.scheme, "diffr");
+    assert.match(uris.left.toString(), new RegExp(`diffr://commit/${shas.first}/`));
     assert.match(labelStrings(diffTab), new RegExp(`^${shas.first.slice(0, 7)} ↔ Working Copy — `));
 
     await dismissQuickPick();
@@ -162,8 +162,8 @@ describe("Diffly commands — end-to-end through real QuickPick UI", () => {
 
     const diffTab = await waitForDiffTab();
     const uris = tabInputUris(diffTab);
-    assert.equal(uris.left.scheme, "diffly");
-    assert.match(uris.left.toString(), new RegExp(`diffly://commit/${shas.first}/`));
+    assert.equal(uris.left.scheme, "diffr");
+    assert.match(uris.left.toString(), new RegExp(`diffr://commit/${shas.first}/`));
     assert.equal(uris.right.scheme, "file");
     assert.match(labelStrings(diffTab), new RegExp(`^${shas.first.slice(0, 7)} ↔ Working Copy — `));
 
@@ -171,7 +171,7 @@ describe("Diffly commands — end-to-end through real QuickPick UI", () => {
     await flow;
   });
 
-  it("compareWith(historyItem) → SideB=Index → diff has diffly://index/ on the right", async () => {
+  it("compareWith(historyItem) → SideB=Index → diff has diffr://index/ on the right", async () => {
     const shas = readSeedShas();
     const flow = vscode.commands.executeCommand(COMMAND_IDS.compareWith, {
       historyItem: { id: shas.first },
@@ -185,10 +185,10 @@ describe("Diffly commands — end-to-end through real QuickPick UI", () => {
 
     const diffTab = await waitForDiffTab();
     const uris = tabInputUris(diffTab);
-    assert.equal(uris.left.scheme, "diffly");
-    assert.equal(uris.right.scheme, "diffly");
-    assert.match(uris.left.toString(), new RegExp(`diffly://commit/${shas.first}/`));
-    assert.match(uris.right.toString(), /^diffly:\/\/index\//);
+    assert.equal(uris.left.scheme, "diffr");
+    assert.equal(uris.right.scheme, "diffr");
+    assert.match(uris.left.toString(), new RegExp(`diffr://commit/${shas.first}/`));
+    assert.match(uris.right.toString(), /^diffr:\/\/index\//);
     assert.match(labelStrings(diffTab), new RegExp(`^${shas.first.slice(0, 7)} ↔ Index — `));
 
     await dismissQuickPick();
@@ -213,10 +213,10 @@ describe("Diffly commands — end-to-end through real QuickPick UI", () => {
     await accept();
     const diffTab = await waitForDiffTab();
     const uris = tabInputUris(diffTab);
-    assert.equal(uris.left.scheme, "diffly");
-    assert.equal(uris.right.scheme, "diffly");
-    assert.match(uris.left.toString(), new RegExp(`diffly://commit/${shas.third}/`));
-    assert.match(uris.right.toString(), new RegExp(`diffly://commit/${shas.second}/`));
+    assert.equal(uris.left.scheme, "diffr");
+    assert.equal(uris.right.scheme, "diffr");
+    assert.match(uris.left.toString(), new RegExp(`diffr://commit/${shas.third}/`));
+    assert.match(uris.right.toString(), new RegExp(`diffr://commit/${shas.second}/`));
     assert.match(labelStrings(diffTab), new RegExp(`^${shas.third.slice(0, 7)} ↔ ${shas.second.slice(0, 7)} — `));
 
     await dismissQuickPick();
@@ -240,8 +240,8 @@ describe("Diffly commands — end-to-end through real QuickPick UI", () => {
     await accept();
     const diffTab = await waitForDiffTab();
     const uris = tabInputUris(diffTab);
-    assert.match(uris.left.toString(), new RegExp(`diffly://commit/${shas.third}/`));
-    assert.match(uris.right.toString(), new RegExp(`diffly://commit/${shas.first}/`));
+    assert.match(uris.left.toString(), new RegExp(`diffr://commit/${shas.third}/`));
+    assert.match(uris.right.toString(), new RegExp(`diffr://commit/${shas.first}/`));
 
     await dismissQuickPick();
     await flow;
@@ -258,9 +258,9 @@ describe("Diffly commands — end-to-end through real QuickPick UI", () => {
 
     const diffTab = await waitForDiffTab();
     const uris = tabInputUris(diffTab);
-    assert.equal(uris.left.scheme, "diffly");
+    assert.equal(uris.left.scheme, "diffr");
     assert.equal(uris.right.scheme, "file");
-    assert.match(uris.left.toString(), new RegExp(`diffly://commit/${shas.second}/`));
+    assert.match(uris.left.toString(), new RegExp(`diffr://commit/${shas.second}/`));
     assert.match(labelStrings(diffTab), new RegExp(`^${shas.second.slice(0, 7)} ↔ Working Copy — `));
 
     await dismissQuickPick();
@@ -277,10 +277,10 @@ describe("Diffly commands — end-to-end through real QuickPick UI", () => {
     await accept();
     const diffTab = await waitForDiffTab();
     const uris = tabInputUris(diffTab);
-    assert.equal(uris.left.scheme, "diffly");
-    assert.equal(uris.right.scheme, "diffly");
-    assert.match(uris.left.toString(), new RegExp(`diffly://commit/${shas.third}/`));
-    assert.match(uris.right.toString(), new RegExp(`diffly://commit/${shas.second}/`));
+    assert.equal(uris.left.scheme, "diffr");
+    assert.equal(uris.right.scheme, "diffr");
+    assert.match(uris.left.toString(), new RegExp(`diffr://commit/${shas.third}/`));
+    assert.match(uris.right.toString(), new RegExp(`diffr://commit/${shas.second}/`));
     assert.match(labelStrings(diffTab), new RegExp(`^${shas.third.slice(0, 7)} ↔ ${shas.second.slice(0, 7)} — `));
 
     await dismissQuickPick();
@@ -297,8 +297,8 @@ describe("Diffly commands — end-to-end through real QuickPick UI", () => {
 
     const diffTab = await waitForDiffTab();
     const uris = tabInputUris(diffTab);
-    assert.equal(uris.left.scheme, "diffly");
-    assert.match(uris.left.toString(), new RegExp(`diffly://commit/${shas.third}/a\\.txt$`));
+    assert.equal(uris.left.scheme, "diffr");
+    assert.match(uris.left.toString(), new RegExp(`diffr://commit/${shas.third}/a\\.txt$`));
     assert.equal(uris.right.scheme, "file");
     assert.match(uris.right.fsPath, /a\.txt$/);
     assert.match(labelStrings(diffTab), new RegExp(`^${shas.third.slice(0, 7)} ↔ Working Copy — a\\.txt$`));
@@ -317,7 +317,7 @@ describe("Diffly commands — end-to-end through real QuickPick UI", () => {
 
     const diffTab = await waitForDiffTab();
     const uris = tabInputUris(diffTab);
-    assert.match(uris.left.toString(), new RegExp(`diffly://commit/${shas.first}/dir/c\\.txt$`));
+    assert.match(uris.left.toString(), new RegExp(`diffr://commit/${shas.first}/dir/c\\.txt$`));
     assert.match(uris.right.fsPath.replace(/\\/g, "/"), /dir\/c\.txt$/);
 
     await flow;
@@ -332,7 +332,7 @@ describe("Diffly commands — end-to-end through real QuickPick UI", () => {
     await accept(); // FilePicker
     const firstDiff = await waitForDiffTab();
     const firstUris = tabInputUris(firstDiff);
-    assert.match(firstUris.left.toString(), new RegExp(`diffly://commit/${shas.first}/`));
+    assert.match(firstUris.left.toString(), new RegExp(`diffr://commit/${shas.first}/`));
     await dismissQuickPick();
     await setup;
     await closeAllEditors();
@@ -342,7 +342,7 @@ describe("Diffly commands — end-to-end through real QuickPick UI", () => {
     await accept(); // FilePicker again
     const reDiff = await waitForDiffTab();
     const reUris = tabInputUris(reDiff);
-    assert.match(reUris.left.toString(), new RegExp(`diffly://commit/${shas.first}/`));
+    assert.match(reUris.left.toString(), new RegExp(`diffr://commit/${shas.first}/`));
     assert.equal(reUris.right.scheme, "file");
 
     await dismissQuickPick();
@@ -365,8 +365,8 @@ describe("Diffly commands — end-to-end through real QuickPick UI", () => {
     await accept(); // FilePicker
     const diffTab = await waitForDiffTab();
     const uris = tabInputUris(diffTab);
-    assert.match(uris.left.toString(), new RegExp(`diffly://commit/${shas.second}/`));
-    assert.match(uris.right.toString(), new RegExp(`diffly://commit/${shas.first}/`));
+    assert.match(uris.left.toString(), new RegExp(`diffr://commit/${shas.second}/`));
+    assert.match(uris.right.toString(), new RegExp(`diffr://commit/${shas.first}/`));
     await dismissQuickPick();
     await flow;
   });
@@ -385,10 +385,10 @@ describe("Diffly commands — end-to-end through real QuickPick UI", () => {
 
     const diffTab = await waitForDiffTab();
     const uris = tabInputUris(diffTab);
-    assert.equal(uris.left.scheme, "diffly");
-    assert.equal(uris.right.scheme, "diffly");
-    assert.match(uris.left.toString(), new RegExp(`diffly://commit/${shas.first}/`));
-    assert.match(uris.right.toString(), new RegExp(`diffly://commit/${shas.second}/`));
+    assert.equal(uris.left.scheme, "diffr");
+    assert.equal(uris.right.scheme, "diffr");
+    assert.match(uris.left.toString(), new RegExp(`diffr://commit/${shas.first}/`));
+    assert.match(uris.right.toString(), new RegExp(`diffr://commit/${shas.second}/`));
     assert.match(labelStrings(diffTab), new RegExp(`^${shas.first.slice(0, 7)} ↔ ${shas.second.slice(0, 7)} — `));
 
     await dismissQuickPick();
@@ -415,10 +415,10 @@ describe("Diffly commands — end-to-end through real QuickPick UI", () => {
 
     const diffTab = await waitForDiffTab();
     const uris = tabInputUris(diffTab);
-    assert.equal(uris.left.scheme, "diffly");
-    assert.equal(uris.right.scheme, "diffly");
-    assert.match(uris.left.toString(), new RegExp(`diffly://commit/${shas.first}/`));
-    assert.match(uris.right.toString(), new RegExp(`diffly://commit/${shas.second}/`));
+    assert.equal(uris.left.scheme, "diffr");
+    assert.equal(uris.right.scheme, "diffr");
+    assert.match(uris.left.toString(), new RegExp(`diffr://commit/${shas.first}/`));
+    assert.match(uris.right.toString(), new RegExp(`diffr://commit/${shas.second}/`));
     assert.match(labelStrings(diffTab), new RegExp(`^${shas.first.slice(0, 7)} ↔ ${shas.second.slice(0, 7)} — `));
 
     await dismissQuickPick();
@@ -443,8 +443,8 @@ describe("Diffly commands — end-to-end through real QuickPick UI", () => {
 
     const diffTab = await waitForDiffTab();
     const uris = tabInputUris(diffTab);
-    assert.equal(uris.left.scheme, "diffly");
-    assert.match(uris.left.toString(), new RegExp(`diffly://commit/${shas.second}/a\\.txt$`));
+    assert.equal(uris.left.scheme, "diffr");
+    assert.match(uris.left.toString(), new RegExp(`diffr://commit/${shas.second}/a\\.txt$`));
     assert.equal(uris.right.scheme, "file");
     assert.match(uris.right.fsPath, /a\.txt$/);
     assert.match(labelStrings(diffTab), new RegExp(`^${shas.second.slice(0, 7)} ↔ Working Copy — a\\.txt$`));
@@ -462,8 +462,8 @@ describe("Diffly commands — end-to-end through real QuickPick UI", () => {
 
     const diffTab = await waitForDiffTab();
     const uris = tabInputUris(diffTab);
-    assert.equal(uris.left.scheme, "diffly");
-    assert.match(uris.left.toString(), new RegExp(`diffly://commit/${shas.second}/a\\.txt$`));
+    assert.equal(uris.left.scheme, "diffr");
+    assert.match(uris.left.toString(), new RegExp(`diffr://commit/${shas.second}/a\\.txt$`));
     assert.equal(uris.right.scheme, "file");
     assert.match(uris.right.fsPath, /a\.txt$/);
     assert.match(labelStrings(diffTab), new RegExp(`^${shas.second.slice(0, 7)} ↔ Working Copy — a\\.txt$`));
@@ -481,7 +481,7 @@ describe("Diffly commands — end-to-end through real QuickPick UI", () => {
   });
 
   it("compareFileWithTag with a file outside any repo → warning, no diff", async () => {
-    const outside = vscode.Uri.file("/tmp/diffly-not-in-any-repo.txt");
+    const outside = vscode.Uri.file("/tmp/diffr-not-in-any-repo.txt");
     const before = allDiffTabs().length;
     await vscode.commands.executeCommand(COMMAND_IDS.compareFileWithTag, outside);
     await tick(40);

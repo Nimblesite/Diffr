@@ -52,7 +52,7 @@ describe("menu manifest — single source of truth", () => {
     );
   });
 
-  it("SCM history item menu contains all five commit-level Diffly commands", () => {
+  it("SCM history item menu contains all five commit-level Diffr commands", () => {
     const entries = buildMenuManifest().menus[MENU_IDS.scmHistoryItem];
     assert.ok(entries !== undefined);
     const cmds = entries.map((e) => e.command);
@@ -65,11 +65,11 @@ describe("menu manifest — single source of truth", () => {
     ]);
     for (const e of entries) {
       assert.equal(e.when, MENU_WHEN.scmGit);
-      assert.match(e.group, /^diffly@\d+$/);
+      assert.match(e.group, /^diffr@\d+$/);
     }
   });
 
-  it("editor/title/context and explorer/context and scm/resourceState/context all expose the three file-level Diffly commands", () => {
+  it("editor/title/context and explorer/context and scm/resourceState/context all expose the three file-level Diffr commands", () => {
     const m = buildMenuManifest().menus;
     const fileLevel = [
       COMMAND_IDS.compareFileWithCommit,

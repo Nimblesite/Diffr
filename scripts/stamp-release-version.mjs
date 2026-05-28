@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Shipwright SWR-VERSION-BUILD-STAMPING for Diffly.
+// Shipwright SWR-VERSION-BUILD-STAMPING for Diffr.
 //
 // Stamps the release version into every deployed carrier in the runner working
 // tree, then writes build-info.json. Source-controlled values are not committed

@@ -1,12 +1,12 @@
-# Diffly Design System
+# Diffr Design System
 
-This design system defines the visual and content standards for the future Diffly website, documentation pages, marketplace graphics, release notes, and adjacent product collateral.
+This design system defines the visual and content standards for the future Diffr website, documentation pages, marketplace graphics, release notes, and adjacent product collateral.
 
-It does not define in-extension UI. Diffly remains a native VS Code extension that uses context menus, Command Palette entries, QuickPick, OutputChannel, and `vscode.diff`.
+It does not define in-extension UI. Diffr remains a native VS Code extension that uses context menus, Command Palette entries, QuickPick, OutputChannel, and `vscode.diff`.
 
 ## Product Position
 
-Diffly is a developer tool for comparing two git states without leaving the workflow the developer already uses.
+Diffr is a developer tool for comparing two git states without leaving the workflow the developer already uses.
 
 Core promise:
 
@@ -14,7 +14,7 @@ Core promise:
 
 Design principles:
 
-- **Native first:** Present Diffly as a small, precise addition to VS Code, not a replacement shell.
+- **Native first:** Present Diffr as a small, precise addition to VS Code, not a replacement shell.
 - **Fast orientation:** Help developers understand entry points, command scope, and resulting diffs quickly.
 - **Quiet confidence:** Use restrained visual emphasis, clear hierarchy, and practical examples.
 - **Diff literacy:** Visual language should make "left vs right", changed files, additions, removals, and revisions immediately legible.
@@ -28,7 +28,7 @@ Audience:
 
 ## Brand Voice
 
-Diffly's voice is direct, concise, and work-focused.
+Diffr's voice is direct, concise, and work-focused.
 
 Use:
 
@@ -52,11 +52,11 @@ Example headlines:
 
 Example body copy:
 
-> Diffly adds focused compare commands to the VS Code surfaces you already use: SCM history, SCM changes, editor tabs, Explorer, and the Command Palette.
+> Diffr adds focused compare commands to the VS Code surfaces you already use: SCM history, SCM changes, editor tabs, Explorer, and the Command Palette.
 
 ## Logo Direction
 
-The Diffly mark should communicate comparison, pairing, and code review without looking like a separate IDE.
+The Diffr mark should communicate comparison, pairing, and code review without looking like a separate IDE.
 
 The current logo set is raster-only. There is no SVG source for these assets. Each icon is built from flat geometric shapes, hard color boundaries, and no text, so a future vector conversion can trace the shapes cleanly.
 
@@ -66,11 +66,11 @@ Current assets:
 
 | Asset                                              | Format | Use                          |
 | -------------------------------------------------- | ------ | ---------------------------- |
-| [Primary 128](assets/diffly-icon-primary-128.png)   | PNG    | Root extension icon source   |
-| [Primary 256](assets/diffly-icon-primary-256.png)   | PNG    | Marketplace and docs         |
-| [Primary 512](assets/diffly-icon-primary-512.png)   | PNG    | High-resolution export       |
-| [Primary 1024](assets/diffly-icon-primary-1024.png) | PNG    | Print, hero, and zoom assets |
-| [Primary WebP](assets/diffly-icon-primary.webp)     | WebP   | Compressed website asset     |
+| [Primary 128](assets/diffr-icon-primary-128.png)   | PNG    | Root extension icon source   |
+| [Primary 256](assets/diffr-icon-primary-256.png)   | PNG    | Marketplace and docs         |
+| [Primary 512](assets/diffr-icon-primary-512.png)   | PNG    | High-resolution export       |
+| [Primary 1024](assets/diffr-icon-primary-1024.png) | PNG    | Print, hero, and zoom assets |
+| [Primary WebP](assets/diffr-icon-primary.webp)     | WebP   | Compressed website asset     |
 | Root extension icon: `icon.png`                    | PNG    | VS Code package icon         |
 
 Preferred concepts:
@@ -227,11 +227,11 @@ Website imagery should show the actual developer workflow.
 
 Preferred assets:
 
-- Clean screenshots of VS Code SCM history context menus with Diffly commands.
+- Clean screenshots of VS Code SCM history context menus with Diffr commands.
 - File QuickPick screenshots showing changed files and stats.
 - `vscode.diff` screenshots with readable left/right labels.
 - Simple diagrams showing Side A, Side B, and file selection flow.
-- Marketplace graphics that pair the Diffly mark with a real diff or command surface.
+- Marketplace graphics that pair the Diffr mark with a real diff or command surface.
 
 Avoid:
 
@@ -284,7 +284,7 @@ Purpose:
 
 Structure:
 
-- Left: Diffly mark and wordmark.
+- Left: Diffr mark and wordmark.
 - Center or right: Docs, GitHub, Releases.
 - Right: primary install action.
 
@@ -297,11 +297,11 @@ Behavior:
 
 Purpose:
 
-- State what Diffly does and show it in context.
+- State what Diffr does and show it in context.
 
 Required content:
 
-- H1: `Diffly`.
+- H1: `Diffr`.
 - Supporting copy that includes "Pick two things and diff them."
 - Primary action: install or marketplace link.
 - Secondary action: view docs or GitHub.
@@ -331,8 +331,8 @@ Example:
 
 | Surface     | Command                         | Side A        | Side B                                      | Result                 |
 | ----------- | ------------------------------- | ------------- | ------------------------------------------- | ---------------------- |
-| SCM history | `Diffly: Compare with...`        | Picked commit | Commit, branch, tag, index, or working copy | File picker, then diff |
-| Editor tab  | `Diffly: Compare with Commit...` | Picked commit | Current file                                | Single-file diff       |
+| SCM history | `Diffr: Compare with...`        | Picked commit | Commit, branch, tag, index, or working copy | File picker, then diff |
+| Editor tab  | `Diffr: Compare with Commit...` | Picked commit | Current file                                | Single-file diff       |
 
 ### Workflow Diagram
 
@@ -432,7 +432,7 @@ Types:
 
 Constraint callout example:
 
-> Diffly does not add a sidebar, activity-bar icon, tree view, or webview. It uses existing VS Code surfaces.
+> Diffr does not add a sidebar, activity-bar icon, tree view, or webview. It uses existing VS Code surfaces.
 
 ## Motion
 
@@ -495,18 +495,18 @@ Use this where space is limited:
 
 Use this for marketplace and social metadata:
 
-> Diffly lets you pick two git states and open file diffs through VS Code's native compare experience.
+> Diffr lets you pick two git states and open file diffs through VS Code's native compare experience.
 
 ### Longer Description
 
 Use this for the website intro:
 
-> Diffly adds focused compare commands to VS Code's existing SCM history, SCM changes, editor tab, Explorer, and Command Palette surfaces. Pick a commit, branch, tag, index, or working copy target, then open changed files in VS Code's built-in diff editor.
+> Diffr adds focused compare commands to VS Code's existing SCM history, SCM changes, editor tab, Explorer, and Command Palette surfaces. Pick a commit, branch, tag, index, or working copy target, then open changed files in VS Code's built-in diff editor.
 
 ### SEO Title Pattern
 
 ```text
-Diffly - Context-menu git diffing for VS Code
+Diffr - Context-menu git diffing for VS Code
 ```
 
 ### Social Description Pattern
@@ -550,54 +550,54 @@ Use these as the first pass for a future web implementation.
 
 ```css
 :root {
-  --diffly-ink-950: #14161a;
-  --diffly-ink-800: #272c33;
-  --diffly-ink-600: #5b6470;
-  --diffly-ink-300: #b8c0ca;
-  --diffly-ink-100: #e6e9ee;
+  --diffr-ink-950: #14161a;
+  --diffr-ink-800: #272c33;
+  --diffr-ink-600: #5b6470;
+  --diffr-ink-300: #b8c0ca;
+  --diffr-ink-100: #e6e9ee;
 
-  --diffly-paper-000: #ffffff;
-  --diffly-paper-050: #f7f8fa;
-  --diffly-paper-100: #eef1f5;
+  --diffr-paper-000: #ffffff;
+  --diffr-paper-050: #f7f8fa;
+  --diffr-paper-100: #eef1f5;
 
-  --diffly-blue-600: #2563eb;
-  --diffly-blue-700: #1d4ed8;
-  --diffly-cyan-500: #0891b2;
-  --diffly-green-600: #16a34a;
-  --diffly-red-600: #dc2626;
-  --diffly-amber-500: #d97706;
-  --diffly-violet-600: #7c3aed;
+  --diffr-blue-600: #2563eb;
+  --diffr-blue-700: #1d4ed8;
+  --diffr-cyan-500: #0891b2;
+  --diffr-green-600: #16a34a;
+  --diffr-red-600: #dc2626;
+  --diffr-amber-500: #d97706;
+  --diffr-violet-600: #7c3aed;
 
-  --diffly-text-primary: var(--diffly-ink-950);
-  --diffly-text-secondary: var(--diffly-ink-600);
-  --diffly-surface-page: var(--diffly-paper-000);
-  --diffly-surface-subtle: var(--diffly-paper-050);
-  --diffly-surface-code: var(--diffly-paper-100);
-  --diffly-border-default: var(--diffly-ink-100);
-  --diffly-action-primary: var(--diffly-blue-600);
-  --diffly-action-primary-hover: var(--diffly-blue-700);
-  --diffly-diff-addition: var(--diffly-green-600);
-  --diffly-diff-deletion: var(--diffly-red-600);
-  --diffly-diff-modified: var(--diffly-amber-500);
-  --diffly-diff-rename: var(--diffly-cyan-500);
+  --diffr-text-primary: var(--diffr-ink-950);
+  --diffr-text-secondary: var(--diffr-ink-600);
+  --diffr-surface-page: var(--diffr-paper-000);
+  --diffr-surface-subtle: var(--diffr-paper-050);
+  --diffr-surface-code: var(--diffr-paper-100);
+  --diffr-border-default: var(--diffr-ink-100);
+  --diffr-action-primary: var(--diffr-blue-600);
+  --diffr-action-primary-hover: var(--diffr-blue-700);
+  --diffr-diff-addition: var(--diffr-green-600);
+  --diffr-diff-deletion: var(--diffr-red-600);
+  --diffr-diff-modified: var(--diffr-amber-500);
+  --diffr-diff-rename: var(--diffr-cyan-500);
 
-  --diffly-radius-sm: 4px;
-  --diffly-radius-md: 8px;
-  --diffly-shadow-soft: 0 12px 30px rgb(20 22 26 / 10%);
+  --diffr-radius-sm: 4px;
+  --diffr-radius-md: 8px;
+  --diffr-shadow-soft: 0 12px 30px rgb(20 22 26 / 10%);
 
-  --diffly-container-reading: 760px;
-  --diffly-container-content: 1120px;
-  --diffly-container-wide: 1280px;
+  --diffr-container-reading: 760px;
+  --diffr-container-content: 1120px;
+  --diffr-container-wide: 1280px;
 
-  --diffly-space-1: 4px;
-  --diffly-space-2: 8px;
-  --diffly-space-3: 12px;
-  --diffly-space-4: 16px;
-  --diffly-space-5: 24px;
-  --diffly-space-6: 32px;
-  --diffly-space-7: 48px;
-  --diffly-space-8: 64px;
-  --diffly-space-9: 96px;
+  --diffr-space-1: 4px;
+  --diffr-space-2: 8px;
+  --diffr-space-3: 12px;
+  --diffr-space-4: 16px;
+  --diffr-space-5: 24px;
+  --diffr-space-6: 32px;
+  --diffr-space-7: 48px;
+  --diffr-space-8: 64px;
+  --diffr-space-9: 96px;
 }
 ```
 

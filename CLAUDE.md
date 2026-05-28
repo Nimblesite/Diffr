@@ -1,4 +1,4 @@
-# Diffly — Agent Instructions
+# Diffr — Agent Instructions
 
 <!-- agent-pmo:74cf183 -->
 
@@ -11,13 +11,13 @@ Call out irrelevant context before proceeding. Bloat degrades reasoning. ⚠️
 ⚠️ **CRITICAL: THIS CODEBASE RECEIVES A GRADE OF A+.** WE DON'T ALLOW BAD CODE. NOT EVEN FOR ONE LINE. CODE MUST PASS REVIEW AT Google / Meta / Microsoft. ANYTHING LESS IS ⛔️ ILLEGAL AND MUST BE FIXED IMMEDIATELY.⚠️
 
 ⚠️ **NEW VIEWS, ACTIVITY-BAR ICONS, SIDEBARS, TREE PROVIDERS, OR WEBVIEWS ARE ⛔️ ILLEGAL.**
-Diffly is **context-menu only**. Every feature hangs off VSCode's existing SCM history, SCM resource state, editor title, and explorer menus — plus a small set of palette commands. If a feature needs a new panel to exist, the feature is wrong.⚠️
+Diffr is **context-menu only**. Every feature hangs off VSCode's existing SCM history, SCM resource state, editor title, and explorer menus — plus a small set of palette commands. If a feature needs a new panel to exist, the feature is wrong.⚠️
 
 Full design + execution plan: [spec.md](spec.md).
 
 ## Project Overview
 
-**Diffly** is a VSCode extension that does exactly one thing: **pick two things and diff them** against a git repository. Side A is a commit; Side B is another commit, the working copy, the index, or a branch/tag (resolved to a commit). It shells out to `git`, hands two URIs to VSCode's built-in `vscode.diff`, and uses a multi-step QuickPick for browsing many changed files. No custom renderer, no custom view.
+**Diffr** is a VSCode extension that does exactly one thing: **pick two things and diff them** against a git repository. Side A is a commit; Side B is another commit, the working copy, the index, or a branch/tag (resolved to a commit). It shells out to `git`, hands two URIs to VSCode's built-in `vscode.diff`, and uses a multi-step QuickPick for browsing many changed files. No custom renderer, no custom view.
 
 **Primary language:** TypeScript (pure — Rust LSP was considered and rejected; LSP is for _language_ semantics, not diffing)
 **Build command:** `make ci`
@@ -32,12 +32,12 @@ There are 7 standard make targets: `build`, `test`, `lint`, `fmt`, `clean`, `ci`
 context-menu / palette command
   → ui/* QuickPick (CommitPicker | SideBPicker | RefPicker | FilePicker)
   → git/GitRepo  → git/GitRunner (subprocess)
-  → providers/DifflyContentProvider (TextDocumentContentProvider for diffly://)
+  → providers/DiffrContentProvider (TextDocumentContentProvider for diffr://)
   → vscode.commands.executeCommand('vscode.diff', leftUri, rightUri, title)
 ```
 
 - **`src/git/`** — pure logic. No `vscode` imports. Subprocess wrapper + NUL-delimited porcelain parsers. Trivially portable to IntelliJ/Kotlin if anyone ever wants that.
-- **`src/providers/DifflyContentProvider.ts`** — `TextDocumentContentProvider` for scheme `diffly`. URI parse + GitRepo call. Pure dispatch.
+- **`src/providers/DiffrContentProvider.ts`** — `TextDocumentContentProvider` for scheme `diffr`. URI parse + GitRepo call. Pure dispatch.
 - **`src/ui/`** — `vscode.window.createQuickPick<T>()` wrappers. Each returns `Result<T, Cancelled>`. FilePicker stays open after selection (`ignoreFocusOut: true`) so a single comparison drives many diffs.
 - **`src/commands/`** — one file per command. Glue only; logic lives in `git/` and `ui/`.
 - **`src/extension.ts`** — activate/deactivate; command + provider registration ONLY. No business logic.
@@ -45,14 +45,14 @@ context-menu / palette command
 
 ## Hard Rules (no exceptions, NON-NEGOTIABLE)
 
-- **NO git commands from the agent.** No `git add`, `commit`, `push`, `checkout`, `merge`, `rebase`. CI and GitHub Actions handle git. (Diffly itself shells out to `git` at runtime — that's the product. The _agent_ doesn't drive git in the dev loop.)
+- **NO git commands from the agent.** No `git add`, `commit`, `push`, `checkout`, `merge`, `rebase`. CI and GitHub Actions handle git. (Diffr itself shells out to `git` at runtime — that's the product. The _agent_ doesn't drive git in the dev loop.)
 - **NO new views, sidebars, activity-bar icons, tree providers, or webviews.** Context menus + palette commands only. Browsing many files is a QuickPick, not a panel.
 - **NO THROWING EXCEPTIONS for control flow.** Return `Result<T,E>` via a discriminated union. Panics are bugs.
 - **NO REGEX on structured data.** Git porcelain output is parsed via NUL-delimited splits (`-z` flag everywhere). Never regex over JSON, YAML, source code, or git output.
 - **NO PLACEHOLDERS.** If something isn't implemented, leave a loud compilation error with TODO. Silent no-ops = ⛔️ ILLEGAL.
 - **Functions < 20 lines.** Refactor aggressively.
 - **Files < 450 lines.** Extract modules when over.
-- **ZERO DUPLICATION.** Search before writing. Move code, don't copy. Diffly detects diffs — its own codebase must be exemplary.
+- **ZERO DUPLICATION.** Search before writing. Move code, don't copy. Diffr detects diffs — its own codebase must be exemplary.
 - **TypeScript strict mode.** `tsconfig.json` has `"strict": true`. No `any`. No `!` (non-null assertion) — use optional chaining or explicit guards. No `// @ts-ignore` / `@ts-nocheck`. No `as Type` casts without a comment explaining safety. All function params and return types annotated.
 - **No suppressing linter warnings.** Fix the code, not the linter.
 - **Decouple providers from the VSCode SDK.** `src/git/` and `src/ui/uri.ts` have ZERO `vscode` imports. SDK-bound modules are thin shells around pure logic.
@@ -104,7 +104,7 @@ Do not write assertions that guard against AI / taxonomy strings. Assert on **po
 ⛔️ BAD
 
 ```typescript
-assert.doesNotMatch(label, /\[diffly-internal-tag\]/);
+assert.doesNotMatch(label, /\[diffr-internal-tag\]/);
 ```
 
 ✅ GOOD
@@ -127,7 +127,7 @@ Two audiences. Write for the right one.
 ## Repo Structure
 
 ```
-Diffly/
+Diffr/
 ├── .github/workflows/{ci.yml, release.yml}
 ├── .vscode-test.mjs
 ├── Makefile                       # 7 standard targets + `package`
@@ -154,7 +154,7 @@ Diffly/
 │   │   ├── parsers.ts             # NUL-delimited porcelain parsers
 │   │   └── types.ts
 │   ├── providers/
-│   │   └── DifflyContentProvider.ts
+│   │   └── DiffrContentProvider.ts
 │   ├── ui/
 │   │   ├── CommitPicker.ts
 │   │   ├── RefPicker.ts

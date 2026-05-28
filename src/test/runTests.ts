@@ -30,7 +30,7 @@ const main = async (): Promise<void> => {
   }
   const coverageDir = process.env["NODE_V8_COVERAGE"];
   const extensionTestsEnv: Record<string, string> = {
-    DIFFLY_E2E: "1",
+    DIFFR_E2E: "1",
   };
   if (coverageDir !== undefined && coverageDir !== "") {
     extensionTestsEnv["NODE_V8_COVERAGE"] = coverageDir;
@@ -39,7 +39,7 @@ const main = async (): Promise<void> => {
     extensionDevelopmentPath,
     extensionTestsPath,
     extensionTestsEnv,
-    launchArgs: [workspacePath, "--disable-telemetry", "--enable-proposed-api", "nimblesite.diffly"],
+    launchArgs: [workspacePath, "--disable-telemetry", "--enable-proposed-api", "nimblesite.diffr"],
   });
 };
 

@@ -7,7 +7,7 @@ import type {
   Commit,
   CommitRev,
   DiffStat,
-  DifflyAddressableRev,
+  DiffrAddressableRev,
   GitError,
   Ref,
   RevSpec,
@@ -20,7 +20,7 @@ export interface DiffSides {
 }
 
 export interface ShowArgs {
-  readonly rev: DifflyAddressableRev;
+  readonly rev: DiffrAddressableRev;
   readonly path: string;
 }
 

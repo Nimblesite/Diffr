@@ -21,7 +21,7 @@ import { makeCompareWithPrevious } from "./commands/compareWithPrevious";
 import { makeCompareWithRef } from "./commands/compareWithRef";
 import { makeCompareWithWorkingCopy } from "./commands/compareWithWorkingCopy";
 import { makeReopenLast } from "./commands/reopenLast";
-import { registerDifflyContentProvider } from "./providers/DifflyContentProvider";
+import { registerDiffrContentProvider } from "./providers/DiffrContentProvider";
 import type { CommandDeps } from "./commands/shared";
 import { buildRepo } from "./commands/shared";
 import { createMementoStore } from "./state";
@@ -110,7 +110,7 @@ export const activate = async (context: vscode.ExtensionContext): Promise<void> 
 
   const state = createMementoStore(context.globalState);
   const deps = { runner, gitApi: api, output, state } as const;
-  registerDifflyContentProvider(context, makeRepoResolver(api, runner));
+  registerDiffrContentProvider(context, makeRepoResolver(api, runner));
   registerAll(context, deps);
   logger.info({ repos: api.repositories.length }, LOG_EVENTS.extensionActivated);
 };

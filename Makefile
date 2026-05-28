@@ -1,6 +1,6 @@
 # agent-pmo:74cf183
 # =============================================================================
-# Standard Makefile — Diffly (VSCode extension, TypeScript)
+# Standard Makefile — Diffr (VSCode extension, TypeScript)
 # Cross-platform: Linux, macOS, Windows (via GNU Make)
 # =============================================================================
 

@@ -5,11 +5,11 @@ import type { GitRepo } from "../git/GitRepo";
 import type { GitRunner } from "../git/GitRunner";
 import { createGitRepo } from "../git/GitRepo";
 import { type GitApi, type GitVsRepository, findRepoForUri } from "../vscodeGitApi";
-import type { CommitRev, DifflyAddressableRev, RevSpec, Sha } from "../git/types";
+import type { CommitRev, DiffrAddressableRev, RevSpec, Sha } from "../git/types";
 import { logger } from "../logger";
 import { type Result, err, ok } from "../result";
 import { CANCELLED, type Cancelled } from "../ui/cancelled";
-import { buildDifflyUri } from "../ui/uri";
+import { buildDiffrUri } from "../ui/uri";
 
 export interface CommandDeps {
   readonly runner: GitRunner;
@@ -51,9 +51,9 @@ export const uriForRev = ({
   if (rev.kind === REV_KINDS.workingCopy) {
     return vscode.Uri.file(path.join(repoRoot, relPath));
   }
-  const addressable: DifflyAddressableRev =
+  const addressable: DiffrAddressableRev =
     rev.kind === REV_KINDS.commit ? { kind: REV_KINDS.commit, sha: rev.sha } : { kind: REV_KINDS.index };
-  return vscode.Uri.parse(buildDifflyUri(addressable, relPath));
+  return vscode.Uri.parse(buildDiffrUri(addressable, relPath));
 };
 
 export const openDiff = async ({

@@ -3,7 +3,7 @@ import * as vscode from "vscode";
 import { COMMAND_IDS, OUTPUT_CHANNEL_NAME } from "../../constants";
 import { tick } from "./helpers";
 
-const EXTENSION_ID = "nimblesite.diffly";
+const EXTENSION_ID = "nimblesite.diffr";
 const TICK_MS = 20;
 
 const ALL_COMMAND_IDS: readonly string[] = Object.values(COMMAND_IDS);
@@ -21,7 +21,7 @@ describe("activation", () => {
     for (const id of ALL_COMMAND_IDS) {
       assert.ok(
         registered.includes(id),
-        `command ${id} should be registered (was: ${registered.filter((c) => c.startsWith("diffly.")).join(", ")})`
+        `command ${id} should be registered (was: ${registered.filter((c) => c.startsWith("diffr.")).join(", ")})`
       );
     }
   });
@@ -35,7 +35,7 @@ describe("activation", () => {
     assert.match(folder.uri.fsPath.replace(/\\/g, "/"), /repo-seed\/workspace$/);
   });
 
-  it("shows logs command opens the Diffly OutputChannel without errors", async () => {
+  it("shows logs command opens the Diffr OutputChannel without errors", async () => {
     await vscode.commands.executeCommand(COMMAND_IDS.showLogs);
     // The channel's "visible" state isn't observable from the test host, but
     // the command must have a registered handler and complete without throwing.

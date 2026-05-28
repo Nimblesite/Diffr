@@ -1,7 +1,7 @@
 import pino, { type Logger as PinoLogger, type Level, multistream } from "pino";
 import { LOG_LEVELS } from "./constants";
 
-const ENV_LOG_LEVEL_VAR = "DIFFLY_LOG_LEVEL";
+const ENV_LOG_LEVEL_VAR = "DIFFR_LOG_LEVEL";
 
 export interface Logger {
   trace: (fields: object, msg?: string) => void;

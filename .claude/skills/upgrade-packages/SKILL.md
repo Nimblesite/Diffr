@@ -1,13 +1,13 @@
 ---
 name: upgrade-packages
-description: Upgrade all dependencies/packages to their latest versions. Diffly is TypeScript/Node — use when the user says "upgrade packages", "update dependencies", "bump versions", "update packages", or "upgrade deps".
+description: Upgrade all dependencies/packages to their latest versions. Diffr is TypeScript/Node — use when the user says "upgrade packages", "update dependencies", "bump versions", "update packages", or "upgrade deps".
 argument-hint: "[--check-only] [--major] [package-name]"
 ---
 <!-- agent-pmo:74cf183 -->
 
 # Upgrade Packages
 
-Upgrade Diffly's npm dependencies to their latest compatible (or latest major, if `--major`) versions.
+Upgrade Diffr's npm dependencies to their latest compatible (or latest major, if `--major`) versions.
 
 ## Arguments
 
@@ -17,7 +17,7 @@ Upgrade Diffly's npm dependencies to their latest compatible (or latest major, i
 
 ## Step 1 — Detect package manager
 
-Diffly uses **npm** (package manifest: `package.json`, lockfile: `package-lock.json`). If for some reason the repo has migrated to yarn or pnpm, adapt accordingly (`yarn outdated`/`yarn up` or `pnpm outdated`/`pnpm update`).
+Diffr uses **npm** (package manifest: `package.json`, lockfile: `package-lock.json`). If for some reason the repo has migrated to yarn or pnpm, adapt accordingly (`yarn outdated`/`yarn up` or `pnpm outdated`/`pnpm update`).
 
 If `package.json` is missing, stop and tell the user.
 
@@ -47,7 +47,7 @@ npm update                            # semver-compatible (within package.json r
 npx npm-check-updates -u && npm install   # bump package.json to latest majors
 ```
 
-### Diffly-specific cautions
+### Diffr-specific cautions
 
 - `@types/vscode` and `@types/node` must remain compatible with the `engines.vscode` minimum declared in `package.json`. A major bump that requires a newer VSCode runtime is a breaking change to consumers.
 - `@vscode/test-electron`, `mocha`, `c8`, and `vsce` (`@vscode/vsce`) are tightly coupled to the extension test/release pipeline — review their changelogs before bumping.

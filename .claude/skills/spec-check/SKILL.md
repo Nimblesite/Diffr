@@ -11,7 +11,7 @@ argument-hint: "[optional spec ID or filename filter]"
 
 Audit spec/plan documents against the codebase. Ensures every spec section has implementing code, tests, and that the code logic matches the spec.
 
-In Diffly, the primary spec lives at [docs/specs/spec.md](../../../docs/specs/spec.md) and the live plan/TODO list at [docs/plans/plan.md](../../../docs/plans/plan.md).
+In Diffr, the primary spec lives at [docs/specs/spec.md](../../../docs/specs/spec.md) and the live plan/TODO list at [docs/plans/plan.md](../../../docs/plans/plan.md).
 
 ## Arguments
 

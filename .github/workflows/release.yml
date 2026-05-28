@@ -1,5 +1,5 @@
 # agent-pmo:74cf183
-# Release Diffly on a v* tag: build → package one universal VSIX → publish to the
+# Release Diffr on a v* tag: build → package one universal VSIX → publish to the
 # VS Code Marketplace → attach it to the GitHub release. One sequential job.
 # Pure-TS extension (no native binaries) → a single platform-agnostic VSIX.
 
@@ -32,25 +32,29 @@ jobs:
       - name: Set version from tag
         run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
 
+      - name: Stamp version into every carrier
+        run: |
+          node scripts/stamp-release-version.mjs "$VERSION"
+          node scripts/verify-versions.mjs "$VERSION"
+
       - name: Build and package universal VSIX
         run: |
-          npm version "$VERSION" --no-git-tag-version --allow-same-version
           npm run build
-          npx vsce package --out "diffly-$VERSION.vsix"
+          npx vsce package --out "diffr-$VERSION.vsix"
 
       - name: Publish to VS Code Marketplace
         env:
           VSCE_PAT: ${{ secrets.VSCODE_MARKETPLACE_PAT }}
         run: |
           if [ -z "$VSCE_PAT" ]; then
-            echo "::error::VSCODE_MARKETPLACE_PAT not accessible. Add Diffly to the secret's allowed repositories under Org Settings → Secrets and variables → Actions."
+            echo "::error::VSCODE_MARKETPLACE_PAT not accessible. Add Diffr to the secret's allowed repositories under Org Settings → Secrets and variables → Actions."
             exit 1
           fi
-          npx vsce publish --packagePath "diffly-$VERSION.vsix" --allow-proposed-apis contribSourceControlHistoryItemMenu
+          npx vsce publish --packagePath "diffr-$VERSION.vsix" --allow-proposed-apis contribSourceControlHistoryItemMenu
 
       - name: Attach VSIX to GitHub release
         uses: softprops/action-gh-release@v2
         with:
-          files: diffly-*.vsix
+          files: diffr-*.vsix
           generate_release_notes: true
           prerelease: ${{ contains(github.ref_name, '-') }}

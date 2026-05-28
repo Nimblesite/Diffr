@@ -29,7 +29,7 @@ export const reportGitError = ({ output, op, e }: { output: vscode.OutputChannel
   if (e.stderr !== undefined && e.stderr !== "") {
     output.appendLine(e.stderr);
   }
-  void vscode.window.showErrorMessage(`${TITLE_PREFIX} ${op} failed (see Output → Diffly).`);
+  void vscode.window.showErrorMessage(`${TITLE_PREFIX} ${op} failed (see Output → Diffr).`);
 };
 
 export const resolveSideB = async ({

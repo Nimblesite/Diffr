@@ -1,6 +1,6 @@
 {
   "_agent_pmo": "74cf183",
-  "name": "Diffly (Node.js)",
+  "name": "Diffr (Node.js)",
   "image": "mcr.microsoft.com/devcontainers/typescript-node:1-20",
   "remoteUser": "vscode",
   "postCreateCommand": "make setup",

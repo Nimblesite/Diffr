@@ -6,7 +6,7 @@ description: Searches for duplicate code, duplicate tests, and dead code, then s
 
 # Code Dedup
 
-Carefully search for duplicate code, duplicate tests, and dead code across the Diffly repo. Merge duplicates and delete dead code — but only when test coverage proves the change is safe.
+Carefully search for duplicate code, duplicate tests, and dead code across the Diffr repo. Merge duplicates and delete dead code — but only when test coverage proves the change is safe.
 
 ## Prerequisites — hard gate
 
@@ -14,7 +14,7 @@ Before touching ANY code, verify these conditions. If any fail, stop and report 
 
 1. Run `make test` — all tests must pass. If tests fail, stop. Do not dedup a broken codebase.
 2. Run `make test` — tests are fail-fast AND enforce the coverage threshold from `coverage-thresholds.json`. If anything fails, stop and fix it before deduping.
-3. Verify the project uses **static typing**. TypeScript with `tsconfig.json` `"strict": true` is required (which Diffly enforces — see CLAUDE.md). If `strict` is off, STOP and refuse.
+3. Verify the project uses **static typing**. TypeScript with `tsconfig.json` `"strict": true` is required (which Diffr enforces — see CLAUDE.md). If `strict` is off, STOP and refuse.
 
 ## Steps
 
@@ -43,7 +43,7 @@ Before deciding what to touch, understand what is tested.
 Search for code that is never called, never imported, never referenced.
 
 1. Look for unused exports, unused functions, unused classes, unused variables.
-2. Check TypeScript: `noUnusedLocals`/`noUnusedParameters` are already enabled in Diffly's `tsconfig.json`. Look for unexported helpers with zero references.
+2. Check TypeScript: `noUnusedLocals`/`noUnusedParameters` are already enabled in Diffr's `tsconfig.json`. Look for unexported helpers with zero references.
 3. For each candidate: **grep the entire codebase** (including `src/test/`, `package.json` `contributes`, `scripts/`, configs) for references. Only mark as dead if truly zero references.
 4. List all dead code found with file paths and line numbers. Do NOT delete yet.
 
@@ -54,7 +54,7 @@ Search for code blocks that do the same thing in multiple places.
 1. Look for functions/methods with identical or near-identical logic.
 2. Look for copy-pasted blocks (same structure, maybe different variable names).
 3. Look for multiple implementations of the same algorithm or pattern.
-4. Check across module boundaries — Diffly's layered architecture (`src/git/`, `src/ui/`, `src/providers/`, `src/commands/`) is a natural place for accidental duplication.
+4. Check across module boundaries — Diffr's layered architecture (`src/git/`, `src/ui/`, `src/providers/`, `src/commands/`) is a natural place for accidental duplication.
 5. For each duplicate pair: note both locations, what they do, and how they differ (if at all).
 6. List all duplicates found. Do NOT merge yet.
 
@@ -101,7 +101,7 @@ For each change, follow this cycle: **change → test → verify coverage → co
 
 - **No test coverage = do not touch.** If a file has no tests covering it, leave it alone entirely. You cannot safely dedup what you cannot verify.
 - **Coverage must not drop.** If removing or merging code causes coverage to decrease, revert and investigate. The coverage floor from Step 1 is sacred.
-- **Strict TypeScript only.** Diffly enforces `strict: true`. If that ever changes, refuse to dedup until it's re-enabled.
+- **Strict TypeScript only.** Diffr enforces `strict: true`. If that ever changes, refuse to dedup until it's re-enabled.
 - **One change at a time.** Make one dedup change, run tests, verify coverage. Never batch multiple dedup changes before testing.
 - **When in doubt, leave it.** If two code blocks look similar but you're not 100% sure they're functionally identical, leave both. False dedup is worse than duplication.
 - **Preserve public API surface.** Do not change exported function signatures, command IDs, URI scheme, or `package.json` `contributes` keys that the extension exposes.

@@ -2,9 +2,9 @@ import * as vscode from "vscode";
 import { LOG_EVENTS, SCHEME } from "../constants";
 import type { GitRepo } from "../git/GitRepo";
 import { logger } from "../logger";
-import { parseDifflyUri } from "../ui/uri";
+import { parseDiffrUri } from "../ui/uri";
 
-export class DifflyContentProvider implements vscode.TextDocumentContentProvider {
+export class DiffrContentProvider implements vscode.TextDocumentContentProvider {
   private readonly emitter = new vscode.EventEmitter<vscode.Uri>();
 
   readonly onDidChange: vscode.Event<vscode.Uri> = this.emitter.event;
@@ -12,7 +12,7 @@ export class DifflyContentProvider implements vscode.TextDocumentContentProvider
   constructor(private readonly resolveRepo: (uri: vscode.Uri) => GitRepo | undefined) {}
 
   async provideTextDocumentContent(uri: vscode.Uri): Promise<string> {
-    const parsed = parseDifflyUri(uri.toString());
+    const parsed = parseDiffrUri(uri.toString());
     if (!parsed.ok) {
       logger.warn({ kind: parsed.error.kind }, LOG_EVENTS.providerParseFailed);
       return "";
@@ -35,11 +35,11 @@ export class DifflyContentProvider implements vscode.TextDocumentContentProvider
   }
 }
 
-export const registerDifflyContentProvider = (
+export const registerDiffrContentProvider = (
   context: vscode.ExtensionContext,
   resolver: (uri: vscode.Uri) => GitRepo | undefined
-): DifflyContentProvider => {
-  const provider = new DifflyContentProvider(resolver);
+): DiffrContentProvider => {
+  const provider = new DiffrContentProvider(resolver);
   context.subscriptions.push(vscode.workspace.registerTextDocumentContentProvider(SCHEME, provider), provider);
   return provider;
 };
