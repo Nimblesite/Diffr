@@ -2,16 +2,16 @@
 
 <!-- agent-pmo:74cf183 -->
 
-⚠️ KILLING A VSCODE PROCESS — EVEN IN THE BROWSER — WILL BE MET WITH INSTANT, EXTREME VIOLENCE!
+⚠️ DO NOT KILL VSCODE PROCESSES ⚠️
 
-> ⚠️ **TOKEN DISCIPLINE.** Check file size first. `Grep` over `Read`. Use `offset`/`limit`.
-> Smallest diff that solves the problem. Delete dead code, unused imports, stale comments.
-> Call out irrelevant context before proceeding. Bloat degrades reasoning. ⚠️
+⚠️ **TOKEN DISCIPLINE.** Check file size first. `Grep` over `Read`. Use `offset`/`limit`.
+Smallest diff that solves the problem. Delete dead code, unused imports, stale comments.
+Call out irrelevant context before proceeding. Bloat degrades reasoning. ⚠️
 
-> ⚠️ **CRITICAL: THIS CODEBASE RECEIVES A GRADE OF A+.** WE DON'T ALLOW BAD CODE. NOT EVEN FOR ONE LINE. CODE MUST PASS REVIEW AT Google / Meta / Microsoft. ANYTHING LESS IS ⛔️ ILLEGAL AND MUST BE FIXED IMMEDIATELY.
+⚠️ **CRITICAL: THIS CODEBASE RECEIVES A GRADE OF A+.** WE DON'T ALLOW BAD CODE. NOT EVEN FOR ONE LINE. CODE MUST PASS REVIEW AT Google / Meta / Microsoft. ANYTHING LESS IS ⛔️ ILLEGAL AND MUST BE FIXED IMMEDIATELY.⚠️
 
 ⚠️ **NEW VIEWS, ACTIVITY-BAR ICONS, SIDEBARS, TREE PROVIDERS, OR WEBVIEWS ARE ⛔️ ILLEGAL.**
-Diffy is **context-menu only**. Every feature hangs off VSCode's existing SCM history, SCM resource state, editor title, and explorer menus — plus a small set of palette commands. If a feature needs a new panel to exist, the feature is wrong.
+Diffy is **context-menu only**. Every feature hangs off VSCode's existing SCM history, SCM resource state, editor title, and explorer menus — plus a small set of palette commands. If a feature needs a new panel to exist, the feature is wrong.⚠️
 
 Full design + execution plan: [spec.md](spec.md).
 
