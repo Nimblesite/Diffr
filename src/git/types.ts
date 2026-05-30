@@ -19,14 +19,6 @@ export interface Commit {
   readonly subject: string;
 }
 
-export interface DiffStat {
-  readonly path: string;
-  readonly oldPath?: string;
-  readonly added: number;
-  readonly deleted: number;
-  readonly binary: boolean;
-}
-
 export interface CommitRev {
   readonly kind: typeof REV_KINDS.commit;
   readonly sha: Sha;

@@ -1,19 +1,9 @@
-import {
-  CHANGED_FILE_STATUSES,
-  GIT_ERROR_KINDS,
-  LF,
-  NUL,
-  REF_PREFIX_HEADS,
-  REF_PREFIX_TAGS,
-  REF_TYPES,
-  TAB,
-} from "../constants";
+import { CHANGED_FILE_STATUSES, GIT_ERROR_KINDS, LF, NUL, REF_PREFIX_HEADS, REF_PREFIX_TAGS, REF_TYPES } from "../constants";
 import { type Result, ok, err } from "../result";
-import type { ChangedFile, ChangedFileStatus, Commit, DiffStat, GitError, Ref, RefType } from "./types";
+import type { ChangedFile, ChangedFileStatus, Commit, GitError, Ref, RefType } from "./types";
 
 const LOG_FIELDS_PER_RECORD = 5;
 const REF_FIELDS_PER_RECORD = 3;
-const NUMSTAT_TAB_FIELDS = 3;
 const CHAR_CODE_DIGIT_LO = 48;
 const CHAR_CODE_DIGIT_HI = 57;
 
@@ -179,78 +169,6 @@ export const parseNameStatus = (stdout: string): Result<readonly ChangedFile[], 
       return r;
     }
     out.push(r.value.file);
-    i = r.value.next;
-  }
-  return ok(out);
-};
-
-interface NumstatHead {
-  readonly added: number;
-  readonly deleted: number;
-  readonly binary: boolean;
-  readonly pathField: string;
-}
-
-const splitNumstatHead = (head: string): Result<NumstatHead, GitError> => {
-  const parts = head.split(TAB);
-  if (parts.length !== NUMSTAT_TAB_FIELDS) {
-    return errParse("parseNumstat: expected 3 tab-fields");
-  }
-  const [a, d, p] = parts;
-  if (a === undefined || d === undefined || p === undefined) {
-    return errParse("parseNumstat: missing tab fields");
-  }
-  if (a === "-" && d === "-") {
-    return ok({ added: 0, deleted: 0, binary: true, pathField: p });
-  }
-  if (!isAllDigits(a) || !isAllDigits(d)) {
-    return errParse("parseNumstat: non-numeric counts");
-  }
-  return ok({
-    added: Number.parseInt(a, 10),
-    deleted: Number.parseInt(d, 10),
-    binary: false,
-    pathField: p,
-  });
-};
-
-const readOneNumstat = (tokens: readonly string[], i: number): Result<{ stat: DiffStat; next: number }, GitError> => {
-  const head = tokens[i];
-  if (head === undefined) {
-    return errParse("parseNumstat: missing record");
-  }
-  const fields = splitNumstatHead(head);
-  if (!fields.ok) {
-    return fields;
-  }
-  const { added, deleted, binary, pathField } = fields.value;
-  if (pathField !== "") {
-    return ok({ stat: { path: pathField, added, deleted, binary }, next: i + 1 });
-  }
-  const oldPath = tokens[i + 1];
-  const newPath = tokens[i + 2];
-  if (oldPath === undefined || newPath === undefined) {
-    return errParse("parseNumstat: rename missing paths");
-  }
-  return ok({
-    stat: { path: newPath, oldPath, added, deleted, binary },
-    next: i + 3,
-  });
-};
-
-export const parseNumstat = (stdout: string): Result<readonly DiffStat[], GitError> => {
-  if (stdout.length === 0) {
-    return ok([]);
-  }
-  const tokens = stripTrailingEmpty(stdout.split(NUL));
-  const out: DiffStat[] = [];
-  let i = 0;
-  while (i < tokens.length) {
-    const r = readOneNumstat(tokens, i);
-    if (!r.ok) {
-      return r;
-    }
-    out.push(r.value.stat);
     i = r.value.next;
   }
   return ok(out);

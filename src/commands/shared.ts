@@ -29,6 +29,9 @@ const labelForRev = (rev: RevSpec): string => {
   return UI_TEXT.indexLabel;
 };
 
+export const formatComparisonTitle = ({ revA, revB }: { revA: CommitRev; revB: RevSpec }): string =>
+  `${labelForRev(revA)} ${UI_TEXT.pathArrow} ${labelForRev(revB)}`;
+
 export const formatDiffTitle = ({
   revA,
   revB,
@@ -37,7 +40,7 @@ export const formatDiffTitle = ({
   revA: CommitRev;
   revB: RevSpec;
   basename: string;
-}): string => `${labelForRev(revA)} ${UI_TEXT.pathArrow} ${labelForRev(revB)} ${UI_TEXT.pathDash} ${basename}`;
+}): string => `${formatComparisonTitle({ revA, revB })} ${UI_TEXT.pathDash} ${basename}`;
 
 export const uriForRev = ({
   rev,
@@ -76,6 +79,34 @@ export const openDiff = async ({
   });
   logger.info({ shaA: shortSha(revA.sha), revBKind: revB.kind }, LOG_EVENTS.diffOpen);
   await vscode.commands.executeCommand(BUILT_IN_COMMANDS.diff, left, right, title);
+};
+
+// One persistent multi-diff editor listing every changed file with its full
+// path and inline diff — click a row to jump to that file's diff. This is
+// VSCode's built-in `vscode.changes` editor, NOT a custom view: it takes a
+// title and a list of `[resource, original, modified]` URI triples. We key each
+// row by the on-disk file URI so the list shows clean workspace-relative paths,
+// while the actual diff sides come from `original` (revA, left) and `modified`
+// (revB, right).
+export const openMultiFileDiff = async ({
+  revA,
+  revB,
+  repoRoot,
+  relPaths,
+}: {
+  revA: CommitRev;
+  revB: RevSpec;
+  repoRoot: string;
+  relPaths: readonly string[];
+}): Promise<void> => {
+  const resourceList = relPaths.map((relPath): [vscode.Uri, vscode.Uri, vscode.Uri] => [
+    vscode.Uri.file(path.join(repoRoot, relPath)),
+    uriForRev({ rev: revA, repoRoot, relPath }),
+    uriForRev({ rev: revB, repoRoot, relPath }),
+  ]);
+  const title = formatComparisonTitle({ revA, revB });
+  logger.info({ shaA: shortSha(revA.sha), revBKind: revB.kind, files: relPaths.length }, LOG_EVENTS.diffOpen);
+  await vscode.commands.executeCommand(BUILT_IN_COMMANDS.changes, title, resourceList);
 };
 
 export const repoForUri = (api: GitApi, uri: vscode.Uri): GitVsRepository | undefined => findRepoForUri(api, uri);

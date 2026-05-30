@@ -1,10 +1,9 @@
 import { strict as assert } from "node:assert";
 import { GIT_ERROR_KINDS, REF_TYPES } from "../../constants";
-import { parseLog, parseNameStatus, parseNumstat, parseRefs } from "../../git/parsers";
+import { parseLog, parseNameStatus, parseRefs } from "../../git/parsers";
 import { expectErr, expectOk } from "../../result";
 
 const NUL = "\x00";
-const TAB = "\t";
 
 const logRecord = (sha: string, short: string, author: string, at: string, subject: string): string =>
   [sha, short, author, at, subject].join(NUL);
@@ -214,88 +213,6 @@ describe("parseNameStatus", () => {
   it("errors when simple status is missing its path", () => {
     const r = parseNameStatus(`M${NUL}`);
     expectErr(r);
-  });
-});
-
-describe("parseNumstat", () => {
-  it("returns empty array for empty input", () => {
-    const r = parseNumstat("");
-    expectOk(r);
-    assert.deepEqual(r.value, []);
-  });
-
-  it("parses a regular numstat record", () => {
-    const r = parseNumstat(`12${TAB}3${TAB}hello.txt${NUL}`);
-    expectOk(r);
-    assert.deepEqual(r.value, [{ path: "hello.txt", added: 12, deleted: 3, binary: false }]);
-  });
-
-  it('parses a binary marker ("-" / "-")', () => {
-    const r = parseNumstat(`-${TAB}-${TAB}image.png${NUL}`);
-    expectOk(r);
-    assert.deepEqual(r.value, [{ path: "image.png", added: 0, deleted: 0, binary: true }]);
-  });
-
-  it("parses a rename record", () => {
-    const r = parseNumstat(`3${TAB}1${TAB}${NUL}old.txt${NUL}new.txt${NUL}`);
-    expectOk(r);
-    assert.deepEqual(r.value, [
-      {
-        path: "new.txt",
-        oldPath: "old.txt",
-        added: 3,
-        deleted: 1,
-        binary: false,
-      },
-    ]);
-  });
-
-  it("parses a mixed batch with regular, binary, and rename", () => {
-    const stdout = `2${TAB}1${TAB}a.txt${NUL}-${TAB}-${TAB}logo.png${NUL}5${TAB}0${TAB}${NUL}old.txt${NUL}new.txt${NUL}`;
-    const r = parseNumstat(stdout);
-    expectOk(r);
-    assert.deepEqual(r.value, [
-      { path: "a.txt", added: 2, deleted: 1, binary: false },
-      { path: "logo.png", added: 0, deleted: 0, binary: true },
-      {
-        path: "new.txt",
-        oldPath: "old.txt",
-        added: 5,
-        deleted: 0,
-        binary: false,
-      },
-    ]);
-  });
-
-  it("preserves spaces and unicode in paths", () => {
-    const r = parseNumstat(`1${TAB}1${TAB}dir with spaces/日本語.txt${NUL}`);
-    expectOk(r);
-    assert.deepEqual(r.value, [
-      {
-        path: "dir with spaces/日本語.txt",
-        added: 1,
-        deleted: 1,
-        binary: false,
-      },
-    ]);
-  });
-
-  it("errors when tab count is wrong", () => {
-    const r = parseNumstat(`1${TAB}2${NUL}`);
-    expectErr(r);
-    assert.match(r.error.message, /3 tab-fields/);
-  });
-
-  it("errors when counts are non-numeric (and not binary marker)", () => {
-    const r = parseNumstat(`abc${TAB}def${TAB}p${NUL}`);
-    expectErr(r);
-    assert.match(r.error.message, /non-numeric/);
-  });
-
-  it("errors on truncated rename", () => {
-    const r = parseNumstat(`3${TAB}1${TAB}${NUL}old.txt${NUL}`);
-    expectErr(r);
-    assert.match(r.error.message, /rename missing paths/);
   });
 });
 

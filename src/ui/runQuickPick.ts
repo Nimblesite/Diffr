@@ -7,7 +7,6 @@ export interface QuickPickConfig<T extends vscode.QuickPickItem> {
   readonly placeholder: string;
   readonly matchOnDescription?: boolean;
   readonly matchOnDetail?: boolean;
-  readonly ignoreFocusOut?: boolean;
 }
 
 const createConfiguredPicker = <T extends vscode.QuickPickItem>(config: QuickPickConfig<T>): vscode.QuickPick<T> => {
@@ -15,7 +14,6 @@ const createConfiguredPicker = <T extends vscode.QuickPickItem>(config: QuickPic
   qp.placeholder = config.placeholder;
   qp.matchOnDescription = config.matchOnDescription ?? false;
   qp.matchOnDetail = config.matchOnDetail ?? false;
-  qp.ignoreFocusOut = config.ignoreFocusOut ?? false;
   qp.items = config.items;
   return qp;
 };
@@ -43,23 +41,3 @@ export const showSinglePick = async <T extends vscode.QuickPickItem>(
     });
     qp.show();
   });
-
-export const showStayOpenPick = async <T extends vscode.QuickPickItem>(
-  config: QuickPickConfig<T>,
-  onPick: (item: T) => void | Promise<void>
-): Promise<void> => {
-  await new Promise<void>((resolve) => {
-    const qp = createConfiguredPicker({ ...config, ignoreFocusOut: true });
-    qp.onDidAccept(() => {
-      const choice = qp.selectedItems[0] ?? qp.activeItems[0];
-      if (choice !== undefined) {
-        void Promise.resolve(onPick(choice));
-      }
-    });
-    qp.onDidHide(() => {
-      qp.dispose();
-      resolve();
-    });
-    qp.show();
-  });
-};

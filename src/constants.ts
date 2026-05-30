@@ -33,6 +33,7 @@ export const COMMAND_IDS = {
 
 export const BUILT_IN_COMMANDS = {
   diff: "vscode.diff",
+  changes: "vscode.changes",
   setContext: "setContext",
 } as const;
 
@@ -56,7 +57,6 @@ export const SHORT_SHA_LEN = 7;
 export const GIT_BINARY = "git";
 
 export const NUL = "\x00";
-export const TAB = "\t";
 export const LF = "\n";
 
 export const GIT_LOG_FORMAT = "%H%x00%h%x00%an%x00%at%x00%s";

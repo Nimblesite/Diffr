@@ -117,6 +117,76 @@ export const waitForDiffTab = async ({
   });
 };
 
+export interface MultiDiffEntry {
+  readonly original: vscode.Uri;
+  readonly modified: vscode.Uri;
+}
+
+// VSCode's built-in multi-diff editor tab carries a `textDiffs` array of
+// {original, modified} URI pairs. `vscode.Tab.input` is typed `unknown`, so the
+// `in` checks below narrow it without an `as` cast; @types/vscode in this repo
+// predates the `TabInputTextMultiDiff` class, so we duck-type the runtime shape.
+const multiDiffTextDiffs = (tab: vscode.Tab): readonly MultiDiffEntry[] | undefined => {
+  const input = tab.input;
+  if (typeof input !== "object" || input === null || !("textDiffs" in input)) {
+    return undefined;
+  }
+  const diffs = input.textDiffs;
+  return Array.isArray(diffs) ? diffs : undefined;
+};
+
+export const allMultiDiffTabs = (): vscode.Tab[] =>
+  vscode.window.tabGroups.all.flatMap((g) => g.tabs).filter((t) => multiDiffTextDiffs(t) !== undefined);
+
+export const multiDiffEntries = (tab: vscode.Tab): readonly MultiDiffEntry[] => {
+  const diffs = multiDiffTextDiffs(tab);
+  if (diffs === undefined) {
+    throw new Error(`Tab is not a multi-diff editor: ${tab.label}`);
+  }
+  return diffs;
+};
+
+const describeOpenTabs = (): string => {
+  const tabs = vscode.window.tabGroups.all.flatMap((g) => g.tabs);
+  if (tabs.length === 0) {
+    return "no tabs open";
+  }
+  return tabs
+    .map((t) => {
+      const input: unknown = t.input;
+      const ctor = typeof input === "object" && input !== null ? input.constructor.name : typeof input;
+      const hasTextDiffs = typeof input === "object" && input !== null && "textDiffs" in input;
+      return `[${ctor}${hasTextDiffs ? "+textDiffs" : ""}] ${t.label}`;
+    })
+    .join(" | ");
+};
+
+export const waitForMultiDiffTab = async ({
+  timeoutMs = 20000,
+}: {
+  timeoutMs?: number;
+} = {}): Promise<vscode.Tab> => {
+  return await new Promise<vscode.Tab>((resolve, reject) => {
+    const existing = allMultiDiffTabs()[0];
+    if (existing !== undefined) {
+      resolve(existing);
+      return;
+    }
+    const timer = setTimeout(() => {
+      sub.dispose();
+      reject(new Error(`Timed out waiting for multi-diff tab. Open tabs: ${describeOpenTabs()}`));
+    }, timeoutMs);
+    const sub = vscode.window.tabGroups.onDidChangeTabs(() => {
+      const t = allMultiDiffTabs()[0];
+      if (t !== undefined) {
+        clearTimeout(timer);
+        sub.dispose();
+        resolve(t);
+      }
+    });
+  });
+};
+
 export const closeAllEditors = async (): Promise<void> => {
   await vscode.commands.executeCommand("workbench.action.closeAllEditors");
   await tick(5);

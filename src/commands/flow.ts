@@ -18,16 +18,14 @@ import { CANCELLED, type Cancelled } from "../ui/cancelled";
 import { pickCommit } from "../ui/CommitPicker";
 import { pickRef } from "../ui/RefPicker";
 import { pickSideBChoice, type SideBChoice } from "../ui/SideBPicker";
-import { mergeChangedFilesWithStats, pickFiles } from "../ui/FilePicker";
 import type { MementoStore } from "../state";
-import { buildRepo, openDiff, pickRepoFrom } from "./shared";
+import { buildRepo, openMultiFileDiff, pickRepoFrom } from "./shared";
 
 const GIT_OPS = {
   listRefs: "list refs",
   revParse: "rev-parse",
   log: "log",
   diffNameStatus: "diff --name-status",
-  diffNumstat: "diff --numstat",
   currentBranch: "current branch",
 } as const;
 
@@ -182,45 +180,17 @@ export const drillIntoFiles = async ({
   state: MementoStore;
   output: vscode.OutputChannel;
 }): Promise<void> => {
-  const entries = await collectChangedFiles({ repo, revA, revB, output });
-  if (entries === undefined) {
+  const ns = await repo.nameStatus({ from: revA, to: revB });
+  if (!ns.ok) {
+    reportGitError({ output, op: GIT_OPS.diffNameStatus, e: ns.error });
     return;
   }
-  if (entries.length === 0) {
+  if (ns.value.length === 0) {
     void vscode.window.showInformationMessage(UI_TEXT.noChanges);
     return;
   }
   await state.setLastComparison({ revA, revB, repoRoot });
-  await pickFiles({
-    entries,
-    onPick: async (entry) => {
-      await openDiff({ revA, revB, repoRoot, relPath: entry.file.path });
-    },
-  });
-};
-
-const collectChangedFiles = async ({
-  repo,
-  revA,
-  revB,
-  output,
-}: {
-  repo: GitRepo;
-  revA: CommitRev;
-  revB: RevSpec;
-  output: vscode.OutputChannel;
-}) => {
-  const ns = await repo.nameStatus({ from: revA, to: revB });
-  if (!ns.ok) {
-    reportGitError({ output, op: GIT_OPS.diffNameStatus, e: ns.error });
-    return undefined;
-  }
-  const num = await repo.numstat({ from: revA, to: revB });
-  if (!num.ok) {
-    reportGitError({ output, op: GIT_OPS.diffNumstat, e: num.error });
-    return undefined;
-  }
-  return mergeChangedFilesWithStats(ns.value, num.value);
+  await openMultiFileDiff({ revA, revB, repoRoot, relPaths: ns.value.map((f) => f.path) });
 };
 
 export const sideAFromSha = (sha: Sha): CommitRev => ({

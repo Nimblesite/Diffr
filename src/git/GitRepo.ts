@@ -1,18 +1,8 @@
 import { DEFAULT_LOG_LIMIT, GIT_LOG_FORMAT, REFS_FORMAT } from "../constants";
 import { type Result, ok, err, andThen, map } from "../result";
 import type { GitRunner } from "./GitRunner";
-import { parseLog, parseNameStatus, parseNumstat, parseRefs } from "./parsers";
-import type {
-  ChangedFile,
-  Commit,
-  CommitRev,
-  DiffStat,
-  DiffrAddressableRev,
-  GitError,
-  Ref,
-  RevSpec,
-  Sha,
-} from "./types";
+import { parseLog, parseNameStatus, parseRefs } from "./parsers";
+import type { ChangedFile, Commit, CommitRev, DiffrAddressableRev, GitError, Ref, RevSpec, Sha } from "./types";
 
 export interface DiffSides {
   readonly from: CommitRev;
@@ -32,7 +22,6 @@ export interface LogArgs {
 export interface GitRepo {
   log: (args?: LogArgs) => Promise<Result<readonly Commit[], GitError>>;
   nameStatus: (args: DiffSides) => Promise<Result<readonly ChangedFile[], GitError>>;
-  numstat: (args: DiffSides) => Promise<Result<readonly DiffStat[], GitError>>;
   show: (args: ShowArgs) => Promise<Result<string, GitError>>;
   refs: () => Promise<Result<readonly Ref[], GitError>>;
   revParse: (name: string) => Promise<Result<Sha, GitError>>;
@@ -44,8 +33,8 @@ const buildLogArgs = (params: { limit: number; ref?: string }): readonly string[
   return params.ref === undefined ? base : [...base, params.ref];
 };
 
-const buildDiffArgs = ({ from, to }: DiffSides, subcommand: "name-status" | "numstat"): readonly string[] => {
-  const head = ["diff", `--${subcommand}`, "-z", "--find-renames", "--find-copies"];
+const buildNameStatusArgs = ({ from, to }: DiffSides): readonly string[] => {
+  const head = ["diff", "--name-status", "-z", "--find-renames", "--find-copies"];
   if (to.kind === "commit") {
     return [...head, from.sha, to.sha];
   }
@@ -73,12 +62,8 @@ export const createGitRepo = ({ runner, cwd }: { runner: GitRunner; cwd: string 
     return andThen(r, parseLog);
   },
   nameStatus: async (args) => {
-    const r = await runner.run({ args: buildDiffArgs(args, "name-status"), cwd });
+    const r = await runner.run({ args: buildNameStatusArgs(args), cwd });
     return andThen(r, parseNameStatus);
-  },
-  numstat: async (args) => {
-    const r = await runner.run({ args: buildDiffArgs(args, "numstat"), cwd });
-    return andThen(r, parseNumstat);
   },
   show: async (args) => await runner.run({ args: ["show", showSpec(args)], cwd }),
   refs: async () => {
