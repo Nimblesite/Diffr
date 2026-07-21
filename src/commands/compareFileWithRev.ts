@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import { REV_KINDS, TITLE_PREFIX } from "../constants";
 import type { GitRepo } from "../git/GitRepo";
+import { toRepoRelPath } from "../git/relPath";
 import type { Sha } from "../git/types";
 import type { Result } from "../result";
 import { err, ok } from "../result";
@@ -69,6 +70,7 @@ const handler = async ({
     void vscode.window.showWarningMessage(NOT_IN_REPO);
     return;
   }
+  const repoRoot = vsRepo.rootUri.fsPath;
   const repo = buildRepo(deps.runner, vsRepo);
   const sha = await pickShaForFile({ repo, source, output: deps.output });
   if (!sha.ok) {
@@ -77,8 +79,8 @@ const handler = async ({
   await openDiff({
     revA: sideAFromSha(sha.value),
     revB: { kind: REV_KINDS.workingCopy },
-    repoRoot: vsRepo.rootUri.fsPath,
-    relPath: vscode.workspace.asRelativePath(target, false),
+    repoRoot,
+    relPath: toRepoRelPath({ repoRoot, fileFsPath: target.fsPath }),
   });
 };
 
