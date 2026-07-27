@@ -6,7 +6,7 @@ Execution plan and live TODO checklist: [../plans/plan.md](../plans/plan.md).
 
 Diffr is a new VSCode extension whose only job is **"pick two things and diff them"** against a git repository and allow editing of the working state side. Side A is a commit; Side B can be another commit, the working copy, the index, or a branch/tag (resolved to a commit).
 
-**KISS principle, enforced**: Diffr adds **no new views, no activity-bar icon, no tree provider, no webviews**. Everything is wired as **context-menu entries on VSCode's existing Source Control surfaces** (SCM history, SCM resource state, editor title, explorer) plus a small number of palette commands. Browsing many changed files between two commits is handled by a **multi-step QuickPick**, not a persistent panel. The user already has a Rust LSP framework (`lsp_toolkit`) and Rust+TS extension precedent (`GithubIssues`) — both explicitly rejected for Diffr.
+**KISS principle, enforced**: Diffr adds **no new views, no activity-bar icon, no tree provider, no webviews**. Everything is wired as **context-menu entries on VSCode's existing Source Control surfaces** (SCM history, SCM graph commit files, SCM resource state, editor title, explorer) plus a small number of palette commands. Browsing many changed files between two commits is handled by a **multi-step QuickPick**, not a persistent panel. The user already has a Rust LSP framework (`lsp_toolkit`) and Rust+TS extension precedent (`GithubIssues`) — both explicitly rejected for Diffr.
 
 ## Stack decision: pure TypeScript
 
@@ -33,6 +33,11 @@ SCM history view, right-click a commit:
   ├── Diffr: Compare with Working Copy  → multi-file QuickPick → diff
   └── Diffr: Compare with Previous      → diff against commit^1
 
+SCM graph, expand a commit and right-click a file inside that commit:
+  ├── Diffr: Compare with…              → SideBPicker → diff this file at the commit vs chosen side
+  ├── Diffr: Compare with Working Copy  → diff this file at the commit vs working copy
+  └── Diffr: Compare with Previous      → diff this file at the commit vs the same path in commit^1
+
 SCM Changes view, right-click a changed file:
   └── Diffr: Compare with Commit…       → CommitPicker → diff this file at picked commit vs working copy
 
@@ -46,6 +51,14 @@ Command palette:
 ```
 
 **Browsing many changed files between two commits**: after Side A and Side B are picked, show a `QuickPick<FileItem>` listing all changed files with `+N -M` in the description and `A/M/D/R/C` status as the detail. Picking a file opens `vscode.diff`; the QuickPick stays open (`ignoreFocusOut: true`) so the user can dismiss the diff and pick another file. **This replaces the tree view entirely.**
+
+**SCM graph commit-file rows**: when the user drills into an expanded commit and right-clicks a changed file row, the selected path is already known. Do not open `FilePicker`; open a single `vscode.diff` for that path. Side A is always `{ kind:'commit', sha:<containing commit> }` plus the selected relative path. Side B is resolved by the selected command:
+
+- `Compare with…` opens `SideBPicker`, which supports a commit, branch/tag, index, or working copy.
+- `Compare with Working Copy` uses `{ kind:'workingCopy' }`.
+- `Compare with Previous` resolves the containing commit's first parent and uses the same relative path. Renames use the old path on the parent side when VSCode's history-file argument exposes it; otherwise fall back to the selected path and let `DiffrContentProvider` return an empty side for missing files.
+
+The handler must recover both the commit SHA and relative path from the actual VSCode SCM graph invocation shape. It must scan all command arguments because VSCode may pass the git `SourceControl` provider before the history/file payload. The provider id literal `git` is never a commit SHA. If VSCode exposes commit-file rows through a proposed menu contribution, keep the proposal isolated in `MENU_IDS` and covered by manifest tests.
 
 ## Project layout
 
@@ -91,6 +104,10 @@ Command palette:
 │   │   ├── compareWith.ts          # SCM-history "Compare with…" entry
 │   │   ├── compareWithWorkingCopy.ts
 │   │   ├── compareWithPrevious.ts
+│   │   ├── compareHistoryFileWith.ts
+│   │   ├── compareHistoryFileWithWorkingCopy.ts
+│   │   ├── compareHistoryFileWithPrevious.ts
+│   │   ├── historyFileContext.ts   # extracts commit SHA + path from SCM graph file-row args
 │   │   ├── compareTwoCommits.ts    # palette
 │   │   ├── compareFileWithCommit.ts # editor/explorer/SCM-resource "Compare with Commit…"
 │   │   └── reopenLast.ts
@@ -121,7 +138,7 @@ Command palette:
 - **`providers/DiffrContentProvider.ts`** — `TextDocumentContentProvider` for scheme `diffr`. URI shapes:
   - `diffr://commit/<sha>/<relpath>` → `git show <sha>:<path>`
   - `diffr://index/<relpath>` → `git show :<path>` (fallback when built-in git ext's `toGitUri` is unavailable)
-  Returns empty string for deleted files. Pure dispatch — URI parse + GitRepo call.
+    Returns empty string for deleted files. Pure dispatch — URI parse + GitRepo call.
 - **`ui/CommitPicker.ts`** / **`RefPicker.ts`** / **`SideBPicker.ts`** / **`FilePicker.ts`** — `vscode.window.createQuickPick<T>()` wrappers returning `Result<T, Cancelled>`. SideB prepends synthetic items: `WORKING_COPY`, `INDEX`, `BRANCH_OR_TAG…` (last opens RefPicker). FilePicker stays open after selection so multiple files can be diffed in sequence from one comparison.
 - **`ui/uri.ts`** — `buildDiffrUri(rev, path): Uri`, `parseDiffrUri(uri): Result<{rev, path}, ParseError>`. Pure, unit-tested. Handles spaces/unicode/`#`/`?` via proper URI encoding.
 - **Types**
@@ -137,45 +154,59 @@ Command palette:
 {
   "activationEvents": ["onStartupFinished"],
   "extensionDependencies": ["vscode.git"],
+  "enabledApiProposals": ["contribSourceControlHistoryItemMenu"],
   "contributes": {
     "commands": [
-      { "command": "diffr.compareWith",              "title": "Diffr: Compare with…" },
-      { "command": "diffr.compareWithWorkingCopy",   "title": "Diffr: Compare with Working Copy" },
-      { "command": "diffr.compareWithPrevious",      "title": "Diffr: Compare with Previous" },
-      { "command": "diffr.compareTwoCommits",        "title": "Diffr: Compare Two Commits" },
-      { "command": "diffr.compareFileWithCommit",    "title": "Diffr: Compare with Commit…" },
-      { "command": "diffr.reopenLast",               "title": "Diffr: Reopen Last Comparison" }
+      { "command": "diffr.compareWith", "title": "Diffr: Compare with…" },
+      { "command": "diffr.compareWithWorkingCopy", "title": "Diffr: Compare with Working Copy" },
+      { "command": "diffr.compareWithPrevious", "title": "Diffr: Compare with Previous" },
+      { "command": "diffr.compareHistoryFileWith", "title": "Diffr: Compare with…" },
+      { "command": "diffr.compareHistoryFileWithWorkingCopy", "title": "Diffr: Compare with Working Copy" },
+      { "command": "diffr.compareHistoryFileWithPrevious", "title": "Diffr: Compare with Previous" },
+      { "command": "diffr.compareTwoCommits", "title": "Diffr: Compare Two Commits" },
+      { "command": "diffr.compareFileWithCommit", "title": "Diffr: Compare with Commit…" },
+      { "command": "diffr.reopenLast", "title": "Diffr: Reopen Last Comparison" },
     ],
     "menus": {
-      "scm/history/item/context": [
-        { "command": "diffr.compareWith",            "when": "scmProvider == git", "group": "diffr@1" },
+      "scm/historyItem/context": [
+        { "command": "diffr.compareWith", "when": "scmProvider == git", "group": "diffr@1" },
         { "command": "diffr.compareWithWorkingCopy", "when": "scmProvider == git", "group": "diffr@2" },
-        { "command": "diffr.compareWithPrevious",    "when": "scmProvider == git", "group": "diffr@3" }
+        { "command": "diffr.compareWithPrevious", "when": "scmProvider == git", "group": "diffr@3" },
       ],
       "scm/resourceState/context": [
-        { "command": "diffr.compareFileWithCommit",  "when": "scmProvider == git", "group": "diffr@1" }
+        { "command": "diffr.compareFileWithCommit", "when": "scmProvider == git", "group": "diffr@1" },
       ],
       "editor/title/context": [
-        { "command": "diffr.compareFileWithCommit",  "when": "resourceScheme == file", "group": "3_compare" }
+        { "command": "diffr.compareFileWithCommit", "when": "resourceScheme == file", "group": "3_compare" },
       ],
       "explorer/context": [
-        { "command": "diffr.compareFileWithCommit",  "when": "resourceScheme == file && !explorerResourceIsFolder", "group": "3_compare" }
+        {
+          "command": "diffr.compareFileWithCommit",
+          "when": "resourceScheme == file && !explorerResourceIsFolder",
+          "group": "3_compare",
+        },
       ],
       "commandPalette": [
-        { "command": "diffr.compareWith",            "when": "false" },
+        { "command": "diffr.compareWith", "when": "false" },
         { "command": "diffr.compareWithWorkingCopy", "when": "false" },
-        { "command": "diffr.compareWithPrevious",    "when": "false" }
-      ]
-    }
-  }
+        { "command": "diffr.compareWithPrevious", "when": "false" },
+        { "command": "diffr.compareHistoryFileWith", "when": "false" },
+        { "command": "diffr.compareHistoryFileWithWorkingCopy", "when": "false" },
+        { "command": "diffr.compareHistoryFileWithPrevious", "when": "false" },
+      ],
+    },
+  },
 }
 ```
 
-The three SCM-history commands receive the commit object as an argument from VSCode; the file/SCM-resource commands receive a `Uri`/`SourceControlResourceState`. Palette-only commands (`compareTwoCommits`, `compareFileWithCommit`, `reopenLast`) take no arguments and prompt for everything.
+The three SCM-history commands receive the commit object as an argument from VSCode; the three SCM graph commit-file commands receive a history/file payload whose actual shape must be verified against the current VSCode build; the file/SCM-resource commands receive a `Uri`/`SourceControlResourceState`. Palette-only commands (`compareTwoCommits`, `compareFileWithCommit`, `reopenLast`) take no arguments and prompt for everything.
+
+Commit-row menus are currently contributed through `scm/historyItem/context` and require `contribSourceControlHistoryItemMenu`. The nested commit-file row menu must be discovered and proven in a real Extension Development Host before wiring `package.json`; do not reuse the commit-row menu id for file rows.
 
 ## Execution flows
 
 **SCM history: "Compare with…"** (entry point passes the commit)
+
 ```
 diffr.compareWith(historyItem)
   → revA = { kind:'commit', sha: historyItem.id }
@@ -190,7 +221,22 @@ diffr.compareWith(historyItem)
 
 **SCM history: "Compare with Previous"** — `revB = { kind:'commit', sha: <historyItem.id>^1 }`, no SideBPicker.
 
+**SCM graph commit file: "Compare with…"**
+
+```
+diffr.compareHistoryFileWith(...args)
+  → ctx = extractHistoryFileContext(args) // { sha, relPath, previousRelPath? }
+  → revA = { kind:'commit', sha: ctx.sha }
+  → SideBPicker → revB
+  → vscode.diff(uriFor(revA, ctx.relPath), uriFor(revB, ctx.relPath), title)
+```
+
+**SCM graph commit file: "Compare with Working Copy"** — same flow, `revB = { kind:'workingCopy' }`, no SideBPicker.
+
+**SCM graph commit file: "Compare with Previous"** — `revB = { kind:'commit', sha: <ctx.sha>^1 }`, using `ctx.previousRelPath ?? ctx.relPath` for the parent side.
+
 **Palette: "Compare Two Commits"**
+
 ```
 diffr.compareTwoCommits
   → resolve repo via vscode.git API (auto if single)
@@ -200,6 +246,7 @@ diffr.compareTwoCommits
 ```
 
 **Editor/Explorer/SCM-resource: "Compare with Commit…"**
+
 ```
 diffr.compareFileWithCommit(uri)
   → GitRepo.log → CommitPicker → rev
@@ -211,11 +258,13 @@ diffr.compareFileWithCommit(uri)
 ## Testing strategy
 
 **Unit (`src/test/unit/`, mocha, no VSCode):**
+
 - `parsers.test.ts` — NUL-delimited log; name-status `A/M/D/R/C` with similarity scores; numstat with binary `-`/`-` markers; empty input; malformed → `Err`
 - `uri.test.ts` — round-trip `build → parse`; paths with spaces, unicode, `#`, `?`; reject malformed
 - `result.test.ts` — combinators if added
 
 **E2E (`src/test/suite/`, `@vscode/test-electron`, black-box only):**
+
 - `activation.test.ts` — extension activates; all commands registered (`vscode.commands.getCommands(true)`)
 - `compareTwoCommits.test.ts` — invoke palette command against fixture repo; assert FilePicker opens with expected file list; selecting a file opens a `TabInputTextDiff` tab (poll `vscode.window.tabGroups.all`)
 - `compareFileWithCommit.test.ts` — open a fixture file, invoke command, assert diff tab opens with expected `diffr://` left URI

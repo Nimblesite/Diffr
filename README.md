@@ -120,7 +120,7 @@ Whenever Diffr asks you to pick Side B, you get four choices:
 
 ## Requirements
 
-- VS Code **^1.85.0**
+- VS Code
 - **Git** on `PATH`
 - The built-in **Git** extension (Diffr depends on it via `extensionDependencies`)
 
