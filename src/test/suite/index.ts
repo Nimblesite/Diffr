@@ -8,6 +8,8 @@ export const run = async (): Promise<void> => {
     color: true,
     timeout: 60000,
     reporter: "spec",
+    // Unset in CI, so the full suite always runs; set locally to focus one test.
+    grep: process.env["MOCHA_GREP"],
   });
   const testsRoot = __dirname;
   const files = await glob("**/*.test.js", { cwd: testsRoot });

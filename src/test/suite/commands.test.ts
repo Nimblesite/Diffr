@@ -147,6 +147,28 @@ describe("Diffr commands — end-to-end through real QuickPick UI", () => {
     assert.equal(allMultiDiffTabs().length, before);
   });
 
+  // The SCM graph's commit context menu (scm/historyItem/context) is gated behind the
+  // contribSourceControlHistoryItemMenu proposed API, which stable VSCode grants only to
+  // built-in and allowlisted extensions. A published extension NEVER receives those menu
+  // items, so the Command Palette is the only surface a real user has for a commit-level
+  // compare — invoking one without a history item must pick the commit, not give up.
+  it("compareWithWorkingCopy from the Command Palette (no history item) prompts for a commit and opens the diff", async () => {
+    const shas = readSeedShas();
+    const flow = vscode.commands.executeCommand(COMMAND_IDS.compareWithWorkingCopy);
+
+    // CommitPicker: top item = most recent (commit 3).
+    await accept();
+
+    const entries = await expectMultiDiff({
+      title: `${short(shas.third)} ↔ Working Copy`,
+      leftSha: shas.third,
+    });
+    assertRightIsWorkingCopy(entries);
+
+    await dismissQuickPick();
+    await flow;
+  });
+
   it("compareWithPrevious without a historyItem → warning, no diff", async () => {
     const before = allMultiDiffTabs().length;
     await vscode.commands.executeCommand(COMMAND_IDS.compareWithPrevious);
