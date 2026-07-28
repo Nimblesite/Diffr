@@ -1,28 +1,24 @@
-import * as vscode from "vscode";
-import { REV_KINDS, TITLE_PREFIX } from "../constants";
+import { REV_KINDS } from "../constants";
 import type { MementoStore } from "../state";
-import { historyItemShaFromArgs } from "./historyItem";
-import { type CommandDeps, buildRepo, pickRepoFrom } from "./shared";
-import { drillIntoFiles, reportGitError, sideAFromSha } from "./flow";
+import type { CommandDeps } from "./shared";
+import { drillIntoFiles, reportGitError, startFromArgsOrPick } from "./flow";
 
 const REV_PARSE_PARENT_OP = "rev-parse parent";
-const HISTORY_VIEW_WARNING = `${TITLE_PREFIX} this command must be invoked from the SCM history view.`;
 
 const handler = async (
   deps: CommandDeps & { readonly state: MementoStore },
   args: readonly unknown[]
 ): Promise<void> => {
-  const sha = historyItemShaFromArgs(args);
-  if (sha === undefined) {
-    void vscode.window.showWarningMessage(HISTORY_VIEW_WARNING);
+  const start = await startFromArgsOrPick({
+    args,
+    runner: deps.runner,
+    gitApi: deps.gitApi,
+    output: deps.output,
+  });
+  if (start === undefined) {
     return;
   }
-  const vs = await pickRepoFrom(deps.gitApi);
-  if (!vs.ok) {
-    return;
-  }
-  const repo = buildRepo(deps.runner, vs.value);
-  const parent = await repo.revParse(`${sha}^1`);
+  const parent = await start.repo.revParse(`${start.revA.sha}^1`);
   if (!parent.ok) {
     reportGitError({
       output: deps.output,
@@ -32,9 +28,9 @@ const handler = async (
     return;
   }
   await drillIntoFiles({
-    repo,
-    repoRoot: vs.value.rootUri.fsPath,
-    revA: sideAFromSha(sha),
+    repo: start.repo,
+    repoRoot: start.vsRepoRoot,
+    revA: start.revA,
     revB: { kind: REV_KINDS.commit, sha: parent.value },
     state: deps.state,
     output: deps.output,

@@ -140,11 +140,14 @@ describe("Diffr commands — end-to-end through real QuickPick UI", () => {
     assert.equal(allDiffTabs().length, before);
   });
 
-  it("compareWithWorkingCopy without a historyItem → warning, no diff", async () => {
+  it("compareWithWorkingCopy without a historyItem → commit picker; cancelling it opens no diff", async () => {
     const before = allMultiDiffTabs().length;
-    await vscode.commands.executeCommand(COMMAND_IDS.compareWithWorkingCopy);
+    const flow = vscode.commands.executeCommand(COMMAND_IDS.compareWithWorkingCopy);
     await tick(40);
-    assert.equal(allMultiDiffTabs().length, before);
+    await dismissQuickPick();
+    await flow;
+    await tick(40);
+    assert.equal(allMultiDiffTabs().length, before, "cancelling the commit picker opens nothing");
   });
 
   // The SCM graph's commit context menu (scm/historyItem/context) is gated behind the
@@ -169,11 +172,21 @@ describe("Diffr commands — end-to-end through real QuickPick UI", () => {
     await flow;
   });
 
-  it("compareWithPrevious without a historyItem → warning, no diff", async () => {
-    const before = allMultiDiffTabs().length;
-    await vscode.commands.executeCommand(COMMAND_IDS.compareWithPrevious);
-    await tick(40);
-    assert.equal(allMultiDiffTabs().length, before);
+  it("compareWithPrevious from the Command Palette (no history item) picks a commit and diffs it against its parent", async () => {
+    const shas = readSeedShas();
+    const flow = vscode.commands.executeCommand(COMMAND_IDS.compareWithPrevious);
+
+    // CommitPicker: top item = most recent (commit 3); its parent is commit 2.
+    await accept();
+
+    const entries = await expectMultiDiff({
+      title: `${short(shas.third)} ↔ ${short(shas.second)}`,
+      leftSha: shas.third,
+    });
+    assertRightIsCommit(entries, shas.second);
+
+    await dismissQuickPick();
+    await flow;
   });
 
   it("compareWithPrevious({id:initial-commit}) → revParse fails → reports error, no diff", async () => {
@@ -370,11 +383,23 @@ describe("Diffr commands — end-to-end through real QuickPick UI", () => {
     await reflow;
   });
 
-  it("compareWith without a historyItem id shows a warning and opens no diff", async () => {
-    const before = allMultiDiffTabs().length;
-    await vscode.commands.executeCommand(COMMAND_IDS.compareWith, undefined);
-    await tick(40);
-    assert.equal(allMultiDiffTabs().length, before, "no new multi-diff tab should appear");
+  it("compareWith with an undefined arg falls back to the commit picker, then Side B", async () => {
+    const shas = readSeedShas();
+    const flow = vscode.commands.executeCommand(COMMAND_IDS.compareWith, undefined);
+
+    // CommitPicker: top item = most recent (commit 3).
+    await accept();
+    // SideBPicker: top = Working Copy.
+    await accept();
+
+    const entries = await expectMultiDiff({
+      title: `${short(shas.third)} ↔ Working Copy`,
+      leftSha: shas.third,
+    });
+    assertRightIsWorkingCopy(entries);
+
+    await dismissQuickPick();
+    await flow;
   });
 
   it("compareWithPrevious(historyItem) with the wrapped { historyItem: {...} } shape still works", async () => {
@@ -407,11 +432,23 @@ describe("Diffr commands — end-to-end through real QuickPick UI", () => {
     await flow;
   });
 
-  it("compareWithBranch without a historyItem → warning, no diff", async () => {
-    const before = allMultiDiffTabs().length;
-    await vscode.commands.executeCommand(COMMAND_IDS.compareWithBranch);
-    await tick(40);
-    assert.equal(allMultiDiffTabs().length, before);
+  it("compareWithBranch from the Command Palette (no history item) picks a commit, then a branch", async () => {
+    const shas = readSeedShas();
+    const flow = vscode.commands.executeCommand(COMMAND_IDS.compareWithBranch);
+
+    // CommitPicker: top item = most recent (commit 3).
+    await accept();
+    // RefPicker: `main` is hidden as the current branch, leaving `feature` at sha2.
+    await accept();
+
+    const entries = await expectMultiDiff({
+      title: `${short(shas.third)} ↔ ${short(shas.second)}`,
+      leftSha: shas.third,
+    });
+    assertRightIsCommit(entries, shas.second);
+
+    await dismissQuickPick();
+    await flow;
   });
 
   it("compareWithTag(historyItem={id:sha1}) → tag-filtered RefPicker → multi-diff vs v0.1.0(=sha2)", async () => {
@@ -431,11 +468,14 @@ describe("Diffr commands — end-to-end through real QuickPick UI", () => {
     await flow;
   });
 
-  it("compareWithTag without a historyItem → warning, no diff", async () => {
+  it("compareWithTag without a historyItem → commit picker; cancelling it opens no diff", async () => {
     const before = allMultiDiffTabs().length;
-    await vscode.commands.executeCommand(COMMAND_IDS.compareWithTag);
+    const flow = vscode.commands.executeCommand(COMMAND_IDS.compareWithTag);
     await tick(40);
-    assert.equal(allMultiDiffTabs().length, before);
+    await dismissQuickPick();
+    await flow;
+    await tick(40);
+    assert.equal(allMultiDiffTabs().length, before, "cancelling the commit picker opens nothing");
   });
 
   it("compareFileWithBranch(uri:a.txt) → branch RefPicker hides `main` → single diff for feature(=sha2) vs working copy", async () => {

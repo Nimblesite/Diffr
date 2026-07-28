@@ -175,26 +175,6 @@
       ],
       "commandPalette": [
         {
-          "command": "diffr.compareWith",
-          "when": "false"
-        },
-        {
-          "command": "diffr.compareWithWorkingCopy",
-          "when": "false"
-        },
-        {
-          "command": "diffr.compareWithPrevious",
-          "when": "false"
-        },
-        {
-          "command": "diffr.compareWithBranch",
-          "when": "false"
-        },
-        {
-          "command": "diffr.compareWithTag",
-          "when": "false"
-        },
-        {
           "command": "diffr.showLogs",
           "when": "false"
         }

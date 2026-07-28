@@ -49,9 +49,21 @@ File Explorer (right-click file) ──┼──► Diffr: Compare with Commit�
 
 Command Palette (Ctrl/Cmd+Shift+P)
 ├── Diffr: Compare Two Commits
+├── Diffr: Compare with…                     ← prompts for the commit, then Side B
+├── Diffr: Compare with Working Copy         ← prompts for the commit
+├── Diffr: Compare with Previous             ← prompts for the commit
+├── Diffr: Compare with Branch…              ← prompts for the commit
+├── Diffr: Compare with Tag…                 ← prompts for the commit
 ├── Diffr: Compare with Commit…              ← uses focused editor's file
 └── Diffr: Reopen Last Comparison
 ```
+
+> **The commit context menu needs a proposed API.** VS Code gates `scm/historyItem/context`
+> behind `contribSourceControlHistoryItemMenu`, which it grants only to built-in and
+> allowlisted extensions — so the right-click entries on a commit row appear only in an
+> Extension Development Host or when VS Code is started with
+> `--enable-proposed-api nimblesite.diffr`. Every commit-level command is therefore also in
+> the Command Palette, where it asks which commit you mean. Nothing is out of reach.
 
 Diff tabs are titled human-first, e.g. `a1b2c3d ↔ Working Copy — src/foo.ts` or `a1b2c3d ↔ 9f8e7d6 — src/foo.ts`. No internal labels, no debug strings.
 
@@ -59,7 +71,7 @@ Diff tabs are titled human-first, e.g. `a1b2c3d ↔ Working Copy — src/foo.ts`
 
 ## Every command
 
-There are **seven** commands. Three are reachable from the Command Palette; four are reachable only from a right-click menu (they need a target — a commit, a file — that the menu provides).
+Every command except **Diffr: Show Logs** is reachable from the Command Palette. The right-click menus are shortcuts that skip a prompt by supplying the target — a commit, a file — directly.
 
 ### From the SCM **History view** (right-click a commit)
 
@@ -71,7 +83,7 @@ Open **Source Control** (Ctrl/Cmd+Shift+G), expand a repository's **History** se
 | **Diffr: Compare with Working Copy** | `diffr.compareWithWorkingCopy` | Same as above, but Side B is hardcoded to your on-disk working copy. Skips the Side B prompt.                                                                                                                                                                                                     |
 | **Diffr: Compare with Previous**     | `diffr.compareWithPrevious`    | Side A is the right-clicked commit, Side B is its first parent (`<sha>^1`). Classic "what changed in this commit?" view.                                                                                                                                                                          |
 
-> These three are intentionally **hidden from the Command Palette** — they only make sense when invoked against a specific commit, which the right-click target provides.
+> Invoked from the palette instead, each of these asks which commit you mean before continuing.
 
 ### From the SCM **Changes** view (right-click a changed file)
 
@@ -95,13 +107,18 @@ Right-click any file under **Changes**, **Staged Changes**, or **Merge Changes**
 
 ### From the **Command Palette** (Ctrl/Cmd+Shift+P)
 
-Type `Diffr:` to filter. Three entries appear:
+Type `Diffr:` to filter. Every command except **Show Logs** appears:
 
-| Palette label                     | Command ID                    | What it does                                                                                                                                                         |
-| --------------------------------- | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Diffr: Compare Two Commits**    | `diffr.compareTwoCommits`     | No target needed. QuickPick chain: pick repo → pick Side A commit → pick Side B (working copy / index / commit / ref) → pick files.                                  |
-| **Diffr: Compare with Commit…**   | `diffr.compareFileWithCommit` | Uses the **currently focused editor's file** as the target. Same flow as the right-click version. If no editor is focused, Diffr will tell you to open a file first. |
-| **Diffr: Reopen Last Comparison** | `diffr.reopenLast`            | Reopens the file picker for the last A↔B comparison you made (stored per-workspace). Handy after closing the picker mid-review.                                      |
+| Palette label                        | Command ID                     | What it does                                                                                                                                                         |
+| ------------------------------------ | ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Diffr: Compare Two Commits**       | `diffr.compareTwoCommits`      | No target needed. QuickPick chain: pick repo → pick Side A commit → pick Side B (working copy / index / commit / ref) → pick files.                                  |
+| **Diffr: Compare with…**             | `diffr.compareWith`            | Prompts for the Side A commit, then asks what Side B is.                                                                                                             |
+| **Diffr: Compare with Working Copy** | `diffr.compareWithWorkingCopy` | Prompts for the Side A commit; Side B is your on-disk working copy.                                                                                                  |
+| **Diffr: Compare with Previous**     | `diffr.compareWithPrevious`    | Prompts for the Side A commit; Side B is its first parent.                                                                                                           |
+| **Diffr: Compare with Branch…**      | `diffr.compareWithBranch`      | Prompts for the Side A commit, then for a branch to compare against.                                                                                                 |
+| **Diffr: Compare with Tag…**         | `diffr.compareWithTag`         | Prompts for the Side A commit, then for a tag to compare against.                                                                                                    |
+| **Diffr: Compare with Commit…**      | `diffr.compareFileWithCommit`  | Uses the **currently focused editor's file** as the target. Same flow as the right-click version. If no editor is focused, Diffr will tell you to open a file first. |
+| **Diffr: Reopen Last Comparison**    | `diffr.reopenLast`             | Reopens the file picker for the last A↔B comparison you made (stored per-workspace). Handy after closing the picker mid-review.                                      |
 
 > **`Diffr: Show Logs`** (`diffr.showLogs`) exists but is hidden from the palette — it's reserved for the extension to surface its OutputChannel programmatically. Open it manually via **View → Output → "Diffr"**.
 
@@ -120,7 +137,7 @@ Whenever Diffr asks you to pick Side B, you get four choices:
 
 ## Requirements
 
-- VS Code
+- VS Code **^1.125.0**
 - **Git** on `PATH`
 - The built-in **Git** extension (Diffr depends on it via `extensionDependencies`)
 

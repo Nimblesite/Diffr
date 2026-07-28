@@ -49,14 +49,10 @@ export const buildMenuManifest = (): MenuManifest => ({
     [MENU_IDS.editorTitleContext]: groupedEntries(fileLevelCommands, MENU_WHEN.resourceFile, MENU_GROUP_PREFIX),
     [MENU_IDS.explorerContext]: groupedEntries(fileLevelCommands, MENU_WHEN.resourceFileNotFolder, MENU_GROUP_PREFIX),
   },
-  commandPalette: hideFromPalette([
-    COMMAND_IDS.compareWith,
-    COMMAND_IDS.compareWithWorkingCopy,
-    COMMAND_IDS.compareWithPrevious,
-    COMMAND_IDS.compareWithBranch,
-    COMMAND_IDS.compareWithTag,
-    COMMAND_IDS.showLogs,
-  ]),
+  // The commit-level commands stay palette-visible: their SCM graph menu is gated behind
+  // a proposed API that published extensions never get, so the palette is the only surface
+  // real users have. Each prompts for its Side A commit when invoked without one.
+  commandPalette: hideFromPalette([COMMAND_IDS.showLogs]),
 });
 
 export const COMMAND_TITLES: Record<string, string> = {

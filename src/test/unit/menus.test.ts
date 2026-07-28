@@ -90,7 +90,9 @@ describe("menu manifest — single source of truth", () => {
     }
   });
 
-  it("commandPalette block hides commit-level entries (they need a history-item arg)", () => {
+  // The SCM graph commit menu is proposal-gated and published extensions never receive it,
+  // so hiding these from the palette left them unreachable for every Marketplace user.
+  it("commit-level commands stay reachable from the Command Palette", () => {
     const palette = buildMenuManifest().commandPalette;
     const hidden = palette.map((e) => e.command);
     for (const cmd of [
@@ -99,10 +101,10 @@ describe("menu manifest — single source of truth", () => {
       COMMAND_IDS.compareWithPrevious,
       COMMAND_IDS.compareWithBranch,
       COMMAND_IDS.compareWithTag,
-      COMMAND_IDS.showLogs,
     ]) {
-      assert.ok(hidden.includes(cmd), `${cmd} should be hidden from the palette`);
+      assert.ok(!hidden.includes(cmd), `${cmd} must NOT be hidden — the palette is its only real surface`);
     }
+    assert.deepEqual(hidden, [COMMAND_IDS.showLogs], "only showLogs is hidden from the palette");
     for (const e of palette) {
       assert.equal(e.when, MENU_WHEN.never);
     }
@@ -147,13 +149,14 @@ describe("menu manifest — single source of truth", () => {
     assert.deepEqual(cmds, expected, "package.json commands drifted — run npm run sync:menus");
   });
 
-  it("package.json declares the contribSourceControlHistoryItemMenu proposed API (required for the commit-row context menu)", () => {
+  // Stable VSCode grants this proposal only to built-in and allowlisted extensions, so the
+  // commit-row menu appears in dev hosts and under --enable-proposed-api but NEVER for a
+  // Marketplace install. The declaration is kept for those hosts; the palette is the surface
+  // real users get, which the "commit-level commands stay reachable" test above guards.
+  it("package.json declares contribSourceControlHistoryItemMenu (lights up the commit menu in dev hosts only)", () => {
     const pkg = readPackageJson();
     const proposals = pkg["enabledApiProposals"];
-    assert.ok(
-      Array.isArray(proposals),
-      "package.json must declare enabledApiProposals so SCM Graph commit menus actually appear"
-    );
+    assert.ok(Array.isArray(proposals), "package.json must declare enabledApiProposals");
     assert.ok(
       (proposals as readonly string[]).includes(PROPOSED_API_HISTORY_ITEM_MENU),
       `enabledApiProposals must include ${PROPOSED_API_HISTORY_ITEM_MENU}`

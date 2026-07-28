@@ -19,6 +19,7 @@ import { pickCommit } from "../ui/CommitPicker";
 import { pickRef } from "../ui/RefPicker";
 import { pickSideBChoice, type SideBChoice } from "../ui/SideBPicker";
 import type { MementoStore } from "../state";
+import { historyItemShaFromArgs } from "./historyItem";
 import { buildRepo, openMultiFileDiff, pickRepoFrom } from "./shared";
 
 const GIT_OPS = {
@@ -203,6 +204,36 @@ export interface StartingPoint {
   readonly repo: GitRepo;
   readonly revA: CommitRev;
 }
+
+// `scm/historyItem/context` is gated behind the contribSourceControlHistoryItemMenu
+// proposed API, which stable VSCode grants only to built-in and allowlisted extensions.
+// A published Diffr therefore never receives a history item, and the Command Palette is
+// the only surface real users have — so with no commit in `args`, ask which one Side A is.
+export const startFromArgsOrPick = async ({
+  args,
+  runner,
+  gitApi,
+  output,
+}: {
+  args: readonly unknown[];
+  runner: GitRunner;
+  gitApi: GitApi;
+  output: vscode.OutputChannel;
+}): Promise<StartingPoint | undefined> => {
+  const sha = historyItemShaFromArgs(args);
+  if (sha === undefined) {
+    return await pickRepoAndCommit({ runner, gitApi, output });
+  }
+  const vs = await pickRepoFrom(gitApi);
+  if (!vs.ok) {
+    return undefined;
+  }
+  return {
+    vsRepoRoot: vs.value.rootUri.fsPath,
+    repo: buildRepo(runner, vs.value),
+    revA: sideAFromSha(sha),
+  };
+};
 
 export const pickRepoAndCommit = async ({
   runner,

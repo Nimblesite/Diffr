@@ -1,34 +1,28 @@
-import * as vscode from "vscode";
-import { TITLE_PREFIX } from "../constants";
 import type { MementoStore } from "../state";
-import { historyItemShaFromArgs } from "./historyItem";
-import { type CommandDeps, buildRepo, pickRepoFrom } from "./shared";
-import { drillIntoFiles, pickSideBAndResolve, sideAFromSha } from "./flow";
-
-const NOT_FROM_HISTORY = `${TITLE_PREFIX} this command must be invoked from the SCM history view.`;
+import type { CommandDeps } from "./shared";
+import { drillIntoFiles, pickSideBAndResolve, startFromArgsOrPick } from "./flow";
 
 const handler = async (
   deps: CommandDeps & { readonly state: MementoStore },
   args: readonly unknown[]
 ): Promise<void> => {
-  const sha = historyItemShaFromArgs(args);
-  if (sha === undefined) {
-    void vscode.window.showWarningMessage(NOT_FROM_HISTORY);
+  const start = await startFromArgsOrPick({
+    args,
+    runner: deps.runner,
+    gitApi: deps.gitApi,
+    output: deps.output,
+  });
+  if (start === undefined) {
     return;
   }
-  const vs = await pickRepoFrom(deps.gitApi);
-  if (!vs.ok) {
-    return;
-  }
-  const repo = buildRepo(deps.runner, vs.value);
-  const revB = await pickSideBAndResolve({ repo, output: deps.output });
+  const revB = await pickSideBAndResolve({ repo: start.repo, output: deps.output });
   if (!revB.ok) {
     return;
   }
   await drillIntoFiles({
-    repo,
-    repoRoot: vs.value.rootUri.fsPath,
-    revA: sideAFromSha(sha),
+    repo: start.repo,
+    repoRoot: start.vsRepoRoot,
+    revA: start.revA,
     revB: revB.value,
     state: deps.state,
     output: deps.output,
