@@ -1,4 +1,4 @@
-import pino, { type Logger as PinoLogger, type Level, multistream } from "pino";
+import pino, { type DestinationStream, type Logger as PinoLogger, type Level, multistream } from "pino";
 import { ENV_VARS, LOG_LEVELS } from "./constants";
 
 export interface Logger {
@@ -10,7 +10,7 @@ export interface Logger {
 }
 
 export interface LogStreamEntry {
-  readonly stream: NodeJS.WritableStream;
+  readonly stream: DestinationStream;
   readonly level?: Level;
 }
 

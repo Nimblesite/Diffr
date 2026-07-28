@@ -6,12 +6,14 @@ export interface MenuEntry {
   readonly group: string;
 }
 
+export interface PaletteEntry {
+  readonly command: string;
+  readonly when: string;
+}
+
 export interface MenuManifest {
   readonly menus: Record<string, readonly MenuEntry[]>;
-  readonly commandPalette: readonly {
-    readonly command: string;
-    readonly when: string;
-  }[];
+  readonly commandPalette: readonly PaletteEntry[];
 }
 
 const ENTRY_INDEX_OFFSET = 1;
@@ -37,7 +39,7 @@ const groupedEntries = (commands: readonly string[], when: string, groupPrefix: 
     group: `${groupPrefix}@${(i + ENTRY_INDEX_OFFSET).toString()}`,
   }));
 
-const hideFromPalette = (commands: readonly string[]) =>
+const hideFromPalette = (commands: readonly string[]): readonly PaletteEntry[] =>
   commands.map((command) => ({ command, when: MENU_WHEN.never }));
 
 export const buildMenuManifest = (): MenuManifest => ({

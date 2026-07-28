@@ -16,16 +16,13 @@ const recordingLogger = (): { logger: Logger; entries: RecordedLog[] } => {
   const at = (level: string) => (): void => {
     entries.push({ level });
   };
-  // GitRunner only ever calls .debug and .warn; this stub supplies all five
-  // level methods so the structural cast to pino's Logger is sound for the
-  // runner's usage even though it is not a real pino instance.
-  const logger = {
+  const logger: Logger = {
     trace: at("trace"),
     debug: at("debug"),
     info: at("info"),
     warn: at("warn"),
     error: at("error"),
-  } as unknown as Logger;
+  };
   return { logger, entries };
 };
 

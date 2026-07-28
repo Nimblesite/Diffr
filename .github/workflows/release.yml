@@ -1,7 +1,17 @@
-# agent-pmo:74cf183
-# Release Diffr on a v* tag: build → package one universal VSIX → publish to the
-# VS Code Marketplace → attach it to the GitHub release. One sequential job.
-# Pure-TS extension (no native binaries) → a single platform-agnostic VSIX.
+# agent-pmo:a72c926
+# Release Diffr on a v* tag: gate → stamp → build → package one universal VSIX →
+# sign + attest → publish to the VS Code Marketplace → attach to the GitHub
+# release. Pure-TS extension (no native binaries) → a single platform-agnostic
+# VSIX, so there is no per-target matrix ([SWR-VSIX-TARGETS]).
+#
+# ⚠️ SETUP REQUIRED BEFORE THE NEXT TAG ⚠️
+# The Marketplace publish uses Entra ID OIDC federation, NOT a stored PAT
+# ([SWR-VSIX-PUBLISH-OIDC]). Until the `release` environment carries
+# AZURE_CLIENT_ID / AZURE_TENANT_ID and the federated service principal is a
+# member of the `nimblesite` publisher, the publish job will fail.
+#
+# Actions are pinned to full commit SHAs ([SWR-SEC-ACTION-PINNING]); the
+# github-actions Dependabot group keeps them fresh.
 
 name: Release
 
@@ -10,18 +20,184 @@ on:
     tags:
       - 'v*'
 
+# Least privilege by default; every write is job-scoped ([SWR-SEC-TOKEN-PRIVILEGE]).
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  release:
-    name: Package and publish
+  version:
+    name: Resolve version
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+      sha: ${{ steps.v.outputs.sha }}
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+      - id: v
+        name: Extract version from tag
+        run: |
+          set -euo pipefail
+          echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+          echo "sha=$GITHUB_SHA" >> "$GITHUB_OUTPUT"
+
+  # CodeQL release gate ([GITHUB-CODE-SCANNING]). Scans the tagged SHA with the
+  # current query set and FAILS on any High/Critical finding. `release` (and
+  # therefore the publish job downstream of it) `needs:` this, so a dirty scan
+  # BLOCKS publishing — a release can never ship code CodeQL flagged. Runs in
+  # PARALLEL with the build; rebuilding is cheap, shipping a vuln is not.
+  codeql:
+    name: CodeQL release gate
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
+    uses: ./.github/workflows/codeql.yml
+    with:
+      gate: true
+
+  build:
+    name: Build, verify and sign the VSIX
+    needs: version
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write # cosign keyless signing + provenance attestation
+      attestations: write
     steps:
-      - uses: actions/checkout@v4
+      # Tag-triggered releases build the EXACT source the tag points at. Never
+      # check out main; never commit or push a version bump ([SWR-VERSION-BUILD-STAMPING]).
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          ref: ${{ needs.version.outputs.sha }}
+          persist-credentials: false
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '22.x'
+          cache: 'npm'
+
+      # Frozen install — the lockfile is authoritative, never `npm install` ([SWR-SEC-FROZEN-INSTALL]).
+      - name: Install dependencies
+        run: npm ci
+
+      # Vulnerability gate ([SWR-SEC-VULN-GATE]). Scoped to the dependencies
+      # that actually ship inside the VSIX — vsce prunes devDependencies, so
+      # they never reach a user. Dev-tree advisories are tracked separately via
+      # Dependabot; they must not be able to block a security release.
+      - name: Vulnerability gate (shipped dependencies)
+        run: npm audit --audit-level=high --omit=dev
+
+      - name: Stamp version into every carrier
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          node scripts/stamp-release-version.mjs "$VERSION"
+          node scripts/verify-versions.mjs "$VERSION"
+
+      # The SAME packaging recipe `make test` and `make rebuild-install-vsix`
+      # run — the tested bundle is the shipped bundle ([MAKE-IDE-EXT-PARITY]).
+      - name: Package the VSIX
+        run: make _vsix_package
+
+      # Asserts the bundle matches shipwright.json: required entries present,
+      # nothing forbidden shipped, version stamped ([SWR-VSIX-VERIFY]).
+      - name: Verify VSIX contents
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+        run: node scripts/verify-vsix.mjs "diffr-$VERSION.vsix" "$VERSION"
+
+      - name: Generate SBOM
+        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
+        with:
+          path: .
+          format: cyclonedx-json
+          output-file: diffr-sbom.cdx.json
+          upload-artifact: false
+          upload-release-assets: false
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+
+      # ONE SHA256SUMS over every release asset, cosign keyless-signed. A bare
+      # per-asset .sha256 with no signature is not sufficient ([SWR-SEC-CHECKSUM]).
+      - name: Checksum and sign release assets
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          sha256sum "diffr-$VERSION.vsix" diffr-sbom.cdx.json > SHA256SUMS
+          cat SHA256SUMS
+          cosign sign-blob --yes \
+            --bundle SHA256SUMS.sigstore.json \
+            SHA256SUMS
+
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4.1.1
+        with:
+          subject-path: |
+            diffr-*.vsix
+            diffr-sbom.cdx.json
+
+      - name: Upload release assets
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-assets
+          path: |
+            diffr-*.vsix
+            diffr-sbom.cdx.json
+            SHA256SUMS
+            SHA256SUMS.sigstore.json
+          retention-days: 7
+          if-no-files-found: error
+
+  release:
+    name: Create GitHub release
+    # codeql is a HARD gate: a High/Critical finding fails it and blocks every
+    # downstream publish. A release can never ship code CodeQL flagged.
+    needs: [version, build, codeql]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: release-assets
+
+      - name: Attach assets to the GitHub release
+        uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3.0.2
+        with:
+          files: |
+            diffr-*.vsix
+            diffr-sbom.cdx.json
+            SHA256SUMS
+            SHA256SUMS.sigstore.json
+          generate_release_notes: true
+          prerelease: ${{ contains(github.ref_name, '-') }}
+
+  publish:
+    name: Publish to VS Code Marketplace
+    needs: [version, release]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Protected environment — the publish identity lives here, not in repo
+    # secrets, so a compromised PR cannot reach it ([SWR-SEC-OIDC-PUBLISH]).
+    environment: release
+    permissions:
+      contents: read
+      id-token: write # Entra ID federation — no stored VSCE_PAT
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          ref: ${{ needs.version.outputs.sha }}
+          persist-credentials: false
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: '22.x'
           cache: 'npm'
@@ -29,32 +205,34 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Set version from tag
-        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
-
-      - name: Stamp version into every carrier
-        run: |
-          node scripts/stamp-release-version.mjs "$VERSION"
-          node scripts/verify-versions.mjs "$VERSION"
-
-      - name: Build and package universal VSIX
-        run: |
-          npm run build
-          npx vsce package --out "diffr-$VERSION.vsix"
-
-      - name: Publish to VS Code Marketplace
-        env:
-          VSCE_PAT: ${{ secrets.VSCODE_MARKETPLACE_PAT }}
-        run: |
-          if [ -z "$VSCE_PAT" ]; then
-            echo "::error::VSCODE_MARKETPLACE_PAT not accessible. Add Diffr to the secret's allowed repositories under Org Settings → Secrets and variables → Actions."
-            exit 1
-          fi
-          npx vsce publish --packagePath "diffr-$VERSION.vsix" --allow-proposed-apis contribSourceControlHistoryItemMenu
-
-      - name: Attach VSIX to GitHub release
-        uses: softprops/action-gh-release@v2
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
-          files: diffr-*.vsix
-          generate_release_notes: true
-          prerelease: ${{ contains(github.ref_name, '-') }}
+          name: release-assets
+
+      # Re-verify the exact artifact we are about to publish. The bytes that
+      # reach the Marketplace are the bytes the release attested.
+      - name: Verify the artifact against SHA256SUMS
+        run: sha256sum --check SHA256SUMS
+
+      # Entra ID OIDC — a short-lived token federated to this repo, scoped to a
+      # service principal that is a member of the `nimblesite` publisher. No
+      # long-lived PAT anywhere ([SWR-VSIX-PUBLISH-OIDC]).
+      - name: Azure login (OIDC)
+        uses: Azure/login@532459ea530d8321f2fb9bb10d1e0bcf23869a43 # v3.0.0
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          allow-no-subscriptions: true
+
+      - name: Publish to the Marketplace
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          VSCE_PAT="$(az account get-access-token \
+            --resource 499b84ac-1321-427f-aa17-267ca6975798 \
+            --query accessToken -o tsv)"
+          export VSCE_PAT
+          npx vsce publish \
+            --packagePath "diffr-$VERSION.vsix" \
+            --allow-proposed-apis contribSourceControlHistoryItemMenu

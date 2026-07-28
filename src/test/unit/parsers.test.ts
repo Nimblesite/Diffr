@@ -5,7 +5,15 @@ import { expectErr, expectOk } from "../../result";
 
 const NUL = "\x00";
 
-const logRecord = (sha: string, short: string, author: string, at: string, subject: string): string =>
+interface LogRecordFields {
+  readonly sha: string;
+  readonly short: string;
+  readonly author: string;
+  readonly at: string;
+  readonly subject: string;
+}
+
+const logRecord = ({ sha, short, author, at, subject }: LogRecordFields): string =>
   [sha, short, author, at, subject].join(NUL);
 
 describe("parseLog", () => {
@@ -16,7 +24,8 @@ describe("parseLog", () => {
   });
 
   it("parses a single commit with trailing NUL", () => {
-    const stdout = logRecord("abc123def456", "abc123d", "Alice", "1700000000", "init") + NUL;
+    const stdout =
+      logRecord({ sha: "abc123def456", short: "abc123d", author: "Alice", at: "1700000000", subject: "init" }) + NUL;
     const r = parseLog(stdout);
     expectOk(r);
     assert.deepEqual(r.value, [
@@ -31,8 +40,14 @@ describe("parseLog", () => {
   });
 
   it("parses two commits separated by NUL", () => {
-    const a = logRecord("aaaa1111", "aaaa111", "Alice", "1700000000", "first");
-    const b = logRecord("bbbb2222", "bbbb222", "Bob", "1700000100", "second commit");
+    const a = logRecord({ sha: "aaaa1111", short: "aaaa111", author: "Alice", at: "1700000000", subject: "first" });
+    const b = logRecord({
+      sha: "bbbb2222",
+      short: "bbbb222",
+      author: "Bob",
+      at: "1700000100",
+      subject: "second commit",
+    });
     const r = parseLog(`${a}${NUL}${b}${NUL}`);
     expectOk(r);
     assert.deepEqual(r.value, [
@@ -54,14 +69,15 @@ describe("parseLog", () => {
   });
 
   it("parses without trailing NUL when field count matches", () => {
-    const stdout = logRecord("abcd1234", "abcd123", "Alice", "1700000000", "init");
+    const stdout = logRecord({ sha: "abcd1234", short: "abcd123", author: "Alice", at: "1700000000", subject: "init" });
     const r = parseLog(stdout);
     expectOk(r);
     assert.equal(r.value.length, 1);
   });
 
   it("preserves an empty subject", () => {
-    const stdout = logRecord("abcd1234", "abcd123", "Alice", "1700000000", "") + NUL;
+    const stdout =
+      logRecord({ sha: "abcd1234", short: "abcd123", author: "Alice", at: "1700000000", subject: "" }) + NUL;
     const r = parseLog(stdout);
     expectOk(r);
     assert.deepEqual(r.value, [
@@ -76,7 +92,14 @@ describe("parseLog", () => {
   });
 
   it("preserves unicode and spaces in author/subject", () => {
-    const stdout = logRecord("abcd1234", "abcd123", "Élise Müller", "1700000000", "feat: 日本語 fix ⚡") + NUL;
+    const stdout =
+      logRecord({
+        sha: "abcd1234",
+        short: "abcd123",
+        author: "Élise Müller",
+        at: "1700000000",
+        subject: "feat: 日本語 fix ⚡",
+      }) + NUL;
     const r = parseLog(stdout);
     expectOk(r);
     assert.deepEqual(r.value, [
@@ -98,21 +121,21 @@ describe("parseLog", () => {
   });
 
   it("errors when timestamp is not numeric", () => {
-    const stdout = logRecord("a", "a", "Alice", "NOT_A_NUMBER", "x") + NUL;
+    const stdout = logRecord({ sha: "a", short: "a", author: "Alice", at: "NOT_A_NUMBER", subject: "x" }) + NUL;
     const r = parseLog(stdout);
     expectErr(r);
     assert.match(r.error.message, /timestamp/);
   });
 
   it("errors when timestamp is empty", () => {
-    const stdout = logRecord("a", "a", "Alice", "", "x") + NUL;
+    const stdout = logRecord({ sha: "a", short: "a", author: "Alice", at: "", subject: "x" }) + NUL;
     const r = parseLog(stdout);
     expectErr(r);
     assert.match(r.error.message, /timestamp/);
   });
 
   it("errors when timestamp has leading/trailing whitespace", () => {
-    const stdout = logRecord("a", "a", "Alice", " 1700000000", "x") + NUL;
+    const stdout = logRecord({ sha: "a", short: "a", author: "Alice", at: " 1700000000", subject: "x" }) + NUL;
     const r = parseLog(stdout);
     expectErr(r);
   });

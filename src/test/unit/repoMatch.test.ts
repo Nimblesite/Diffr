@@ -47,7 +47,7 @@ describe("findRepoForUri", () => {
     const uri = { fsPath: "/Users/me/repo/file.txt" };
     const api = {
       repositories: [] as readonly RepoLike[],
-      getRepository: (_u: UriLike) => repo,
+      getRepository: (_u: UriLike): RepoLike => repo,
     };
     const result = findRepoForUri(api, uri);
     assert.strictEqual(result, repo);
@@ -65,7 +65,7 @@ describe("findRepoForUri", () => {
     const uri = { fsPath: "/Users/me/repo/file.txt" };
     const api = {
       repositories: [] as readonly RepoLike[],
-      getRepository: (_u: UriLike) => null,
+      getRepository: (_u: UriLike): RepoLike | null => null,
     };
     const result = findRepoForUri(api, uri);
     assert.equal(result, undefined);

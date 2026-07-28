@@ -3,7 +3,7 @@
   "product": {
     "id": "diffr",
     "displayName": "Diffr",
-    "version": "0.1.0",
+    "version": "0.0.0-dev",
     "repository": "https://github.com/Nimblesite/Diffr",
     "homepage": "https://github.com/Nimblesite/Diffr"
   },

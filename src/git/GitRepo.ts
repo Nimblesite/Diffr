@@ -55,29 +55,29 @@ const trimSha = (stdout: string): Result<Sha, GitError> => {
 };
 
 export const createGitRepo = ({ runner, cwd }: { runner: GitRunner; cwd: string }): GitRepo => ({
-  log: async (args = {}) => {
+  log: async (args = {}): Promise<Result<readonly Commit[], GitError>> => {
     const limit = args.limit ?? DEFAULT_LOG_LIMIT;
     const logArgs = args.ref === undefined ? buildLogArgs({ limit }) : buildLogArgs({ limit, ref: args.ref });
     const r = await runner.run({ args: logArgs, cwd });
     return andThen(r, parseLog);
   },
-  nameStatus: async (args) => {
+  nameStatus: async (args): Promise<Result<readonly ChangedFile[], GitError>> => {
     const r = await runner.run({ args: buildNameStatusArgs(args), cwd });
     return andThen(r, parseNameStatus);
   },
-  show: async (args) => await runner.run({ args: ["show", showSpec(args)], cwd }),
-  refs: async () => {
+  show: async (args): Promise<Result<string, GitError>> => await runner.run({ args: ["show", showSpec(args)], cwd }),
+  refs: async (): Promise<Result<readonly Ref[], GitError>> => {
     const r = await runner.run({
       args: ["for-each-ref", `--format=${REFS_FORMAT}`],
       cwd,
     });
     return andThen(r, parseRefs);
   },
-  revParse: async (name) => {
+  revParse: async (name): Promise<Result<Sha, GitError>> => {
     const r = await runner.run({ args: ["rev-parse", "--verify", name], cwd });
     return andThen(r, trimSha);
   },
-  currentBranch: async () => {
+  currentBranch: async (): Promise<Result<string | undefined, GitError>> => {
     const r = await runner.run({ args: ["branch", "--show-current"], cwd });
     return map(r, (stdout) => {
       const name = stdout.trim();

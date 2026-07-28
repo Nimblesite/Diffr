@@ -1,5 +1,8 @@
 {
-    "basilisk.enabled": true,
-    "basilisk.uv.enabled": true,
-    "basilisk.aiTyping.enabled": false
+  "workbench.colorCustomizations": {
+    "titleBar.activeBackground": "#2563eb",
+    "titleBar.activeForeground": "#ffffff",
+    "titleBar.inactiveBackground": "#1d4ed8",
+    "titleBar.inactiveForeground": "#ffffffcc"
+  }
 }

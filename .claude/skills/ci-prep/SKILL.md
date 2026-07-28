@@ -3,7 +3,7 @@ name: ci-prep
 description: Prepares the current branch for CI by running the exact same steps locally and fixing issues. If CI is already failing, fetches the GH Actions logs first to diagnose. Use before pushing, when CI is red, or when the user says "fix ci".
 argument-hint: "[--failing] [optional job name to focus on]"
 ---
-<!-- agent-pmo:74cf183 -->
+<!-- agent-pmo:a72c926 -->
 
 # CI Prep
 
@@ -44,7 +44,7 @@ Read **every line** of `--log-failed` output. For each failure note the exact fi
 
 1. Find the CI workflow file. Look in `.github/workflows/` for `ci.yml`, `build.yml`, `test.yml`, `checks.yml`, `main.yml`, `pull_request.yml`, or any workflow triggered on `pull_request` or `push`.
 2. Read the workflow file completely. Parse every job and every step.
-3. Extract the ordered list of commands the CI actually runs. In a spec-compliant repo this is `make lint → make test → make build` (REPO-STANDARDS-SPEC [MAKE-TARGETS]), but the actual CI may use `npm`, `cargo`, `dotnet`, raw shell commands, or anything else. Extract what is *actually there*.
+3. Extract the ordered list of commands the CI actually runs. In Diffr this is `make fmt CHECK=1 → make lint → npm audit → stamp dry-run → make test → make build` (REPO-STANDARDS-SPEC [MAKE-TARGETS]), but do not take that on trust — the workflow may have moved on. Extract what is *actually there*.
 4. Note any environment variables, matrix strategies, or conditional steps that affect execution.
 
 **Do NOT assume the steps are `make lint`, `make test`, `make build`.** The actual CI may run different commands, in a different order. Extract what the CI *actually does*. If you find extra targets beyond the 7 in [MAKE-TARGETS] (e.g. `make fmt-check`, `make coverage-check`), flag them in your final report — they should be consolidated by the agent-pmo skill.
@@ -59,10 +59,11 @@ and must be fixed before release work is considered CI-ready:
 - Version bump commits after the tag already exists.
 - Ad hoc `sed` version stamping of structured files instead of a first-class stamper/build input.
 - Missing tests that pass a test version into the same stamper used by release.
-- Native VSIX releases without Node `22.x`, `npx vsce package --target <vsceTarget>`, one VSIX per
-  target, target-suffixed filenames, and package-content verification.
-- VS Code native-binary activation that reads or mutates PATH, uses package-manager/global installs
-  as normal startup sources, or copies bundled VSIX binaries after install.
+- The VSIX release path skipping Node `22.x`, the shared `make _vsix_package` recipe, or
+  `scripts/verify-vsix.mjs` package-content verification. Diffr ships no native binaries, so ONE
+  platform-agnostic VSIX is correct — do not add a `--target` matrix.
+- A Marketplace publish that uses a stored `VSCE_PAT` instead of Entra ID OIDC ([SWR-VSIX-PUBLISH-OIDC]).
+- Source versions that are not `0.0.0-dev`, or a release that commits a version bump after the tag.
 
 ## Step 3 — Run each CI step locally, in order
 
@@ -83,7 +84,7 @@ For each command extracted from the CI workflow:
 ### Hard constraints
 
 - **NEVER modify test files** — fix the source code, not the tests
-- **NEVER add suppressions** (`// eslint-disable`, `// @ts-ignore`, `// @ts-nocheck`)
+- **NEVER add suppressions** (`#[allow(...)]`, `// eslint-disable`, `#pragma warning disable`)
 - **NEVER use `any` in TypeScript** to silence type errors
 - **NEVER delete or ignore failing tests**
 - **NEVER remove assertions**
@@ -112,7 +113,8 @@ Once all CI steps pass locally:
 - Fix issues found in each step before moving to the next
 - Never skip steps or suppress errors
 - If the CI workflow has multiple jobs, run all of them (respecting dependency order)
-- Skip steps that are CI-infrastructure-only (checkout, setup-node/python/rust actions, cache steps, artifact uploads) — focus on the actual build/test/lint commands
+- Skip steps that are CI-infrastructure-only (checkout, setup-node, cache steps, artifact uploads) — focus on the actual build/test/lint commands
+- **The E2E suite needs a display.** CI wraps it as `xvfb-run -a make test`; locally on macOS just run `make test`. Never kill VS Code processes to unstick a run.
 
 ## Success criteria
 

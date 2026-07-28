@@ -1,2 +1,3 @@
-<!-- agent-pmo:74cf183 -->
-@CLAUDE.md
+<!-- agent-pmo:a72c926 -->
+
+@AGENTS.md

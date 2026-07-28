@@ -1,29 +1,48 @@
-# agent-pmo:74cf183
+# agent-pmo:a72c926
 name: CI
 
 on:
+  # CI runs on PRs to the default branch ONLY ([CI-WORKFLOWS]).
+  # Merges/pushes to main trigger NOTHING — main is already-validated code that
+  # arrived through a green PR; re-running CI on the merge is wasted runner time.
   pull_request:
-    branches: [main]
-  push:
     branches: [main]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# Least privilege ([SWR-SEC-TOKEN-PRIVILEGE]). CI reads; it never writes.
+permissions:
+  contents: read
+
+# There is deliberately NO `security` job running dependency-review: the
+# vulnerability gate below is this repo's single owner of "vulnerable deps"
+# ([GITHUB-DEP-REVIEW] — one owner per concern, no doubling). CodeQL owns
+# vulnerable code (codeql.yml); `make lint` owns style/correctness.
 jobs:
   ci:
     name: CI
+    # Dependabot PRs are swept into `dependabot-upgrades` by
+    # dependabot-automerge.yml and never merge into main directly, so this would
+    # only burn minutes on a bump we discard. CI runs once, on the
+    # `dependabot-upgrades -> main` consolidation PR. ([GITHUB-DEPENDABOT])
+    if: github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
+      # Actions pinned to full commit SHAs ([SWR-SEC-ACTION-PINNING]); the
+      # github-actions Dependabot group keeps them fresh.
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
-          node-version: '20'
+          persist-credentials: false
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '22.x'
           cache: 'npm'
 
+      # Frozen install — the lockfile is authoritative ([SWR-SEC-FROZEN-INSTALL]).
       - run: npm ci
 
       - name: Format check
@@ -31,6 +50,12 @@ jobs:
 
       - name: Lint (includes shipwright.json schema check)
         run: make lint
+
+      # Vulnerability gate ([SWR-SEC-VULN-GATE]), scoped to the dependencies
+      # that ship inside the VSIX — vsce prunes devDependencies, so they never
+      # reach a user. Mirrors the gate in release.yml.
+      - name: Vulnerability gate (shipped dependencies)
+        run: npm audit --audit-level=high --omit=dev
 
       - name: Dry-run release stamp (proves the script still runs)
         run: node scripts/stamp-release-version.mjs 0.0.0 --dry
@@ -43,7 +68,7 @@ jobs:
         run: make build
 
       - name: Upload coverage
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:
           name: coverage-report
@@ -53,7 +78,7 @@ jobs:
           retention-days: 7
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: build
           path: out/

@@ -1,0 +1,53 @@
+# agent-pmo:a72c926
+# Dependabot — supply-chain defense without PR spam, and without burning CI on
+# `main` for routine bumps. Portfolio standard ([GITHUB-DEPENDABOT]).
+#
+# How this kills the spam — EVERY bump ends up on the `dependabot-upgrades`
+# STAGING branch, swept there automatically by
+# .github/workflows/dependabot-automerge.yml (latest bump clobbers previous):
+#   * VERSION updates -> `target-branch: dependabot-upgrades`. Every routine bump
+#     PR is opened against the staging branch, never against main. ci.yml /
+#     codeql.yml only trigger on `pull_request: [main]` (the filter matches the
+#     PR *base*), so these staging PRs run NO build/test/CodeQL.
+#   * SECURITY updates -> GitHub IGNORES `target-branch` for these and always
+#     opens them against the repo's default branch (`main`). The auto-merge
+#     workflow therefore also fires on `main` and folds the security bump into
+#     the SAME staging branch, then retires the PR — so a CVE bump never sits on
+#     main waiting for a human. (ci.yml/codeql.yml skip Dependabot PRs, so the
+#     matrix never burns on a bump we immediately sweep away.)
+#   * groups -> each ecosystem collapses ALL version bumps (patch, minor AND
+#     major) into ONE PR, and a parallel `*-security` group (`applies-to:
+#     security-updates`) collapses CVE bumps the same way. Review happens once,
+#     at the `dependabot-upgrades -> main` consolidation PR.
+#   * interval: weekly -> one grouped PR per ecosystem each week, not fifty.
+version: 2
+
+updates:
+  # GitHub Actions — Diffr's workflows pin actions by SHA, a prime supply-chain
+  # target, so keep them current.
+  - package-ecosystem: github-actions
+    directory: /
+    target-branch: "dependabot-upgrades"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    labels: ["dependencies"]
+    groups:
+      github-actions:
+        patterns: ["*"]
+
+  # npm / Node — package.json (the only language manifest in this repo).
+  - package-ecosystem: npm
+    directory: /
+    target-branch: "dependabot-upgrades"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    labels: ["dependencies"]
+    groups:
+      npm:
+        applies-to: version-updates
+        patterns: ["*"]
+      npm-security:
+        applies-to: security-updates
+        patterns: ["*"]

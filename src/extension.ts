@@ -26,22 +26,19 @@ import type { CommandDeps } from "./commands/shared";
 import { buildRepo } from "./commands/shared";
 import { createMementoStore } from "./state";
 import type { GitRunner } from "./git/GitRunner";
+import type { GitRepo } from "./git/GitRepo";
+import type { DestinationStream } from "pino";
 
 const GIT_VERSION_ARG = "--version";
 const GIT_MISSING_MESSAGE = `${TITLE_PREFIX} git binary not found on PATH ${UI_TEXT.pathDash} commands disabled.`;
 const GIT_API_MISSING_MESSAGE = `${TITLE_PREFIX} built-in git extension API unavailable.`;
 const TRAILING_NEWLINE = /\n$/;
 
-const channelStream = (channel: vscode.OutputChannel): NodeJS.WritableStream => {
-  const stream = {
-    write(chunk: string | Uint8Array): boolean {
-      const text = typeof chunk === "string" ? chunk : Buffer.from(chunk).toString("utf8");
-      channel.appendLine(text.replace(TRAILING_NEWLINE, ""));
-      return true;
-    },
-  };
-  return stream as NodeJS.WritableStream;
-};
+const channelStream = (channel: vscode.OutputChannel): DestinationStream => ({
+  write(chunk: string): void {
+    channel.appendLine(chunk.replace(TRAILING_NEWLINE, ""));
+  },
+});
 
 const probeGit = async (runner: GitRunner): Promise<boolean> => {
   const r = await runner.run({ args: [GIT_VERSION_ARG], cwd: process.cwd() });
@@ -52,7 +49,7 @@ const setGitAvailable = async (available: boolean): Promise<void> => {
   await vscode.commands.executeCommand(BUILT_IN_COMMANDS.setContext, CONTEXT_KEYS.gitAvailable, available);
 };
 
-const makeRepoResolver = (api: GitApi, runner: GitRunner) => () => {
+const makeRepoResolver = (api: GitApi, runner: GitRunner) => (): GitRepo | undefined => {
   const first = api.repositories[0];
   if (first === undefined) {
     return undefined;

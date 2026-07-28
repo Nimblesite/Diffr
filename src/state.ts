@@ -32,14 +32,14 @@ export const isLastComparison = (raw: unknown): raw is LastComparison => {
 };
 
 export const createMementoStore = (memento: vscode.Memento): MementoStore => ({
-  getLastComparison: () => {
+  getLastComparison: (): LastComparison | undefined => {
     const raw = memento.get<unknown>(MEMENTO_KEYS.lastComparison);
     return isLastComparison(raw) ? raw : undefined;
   },
-  setLastComparison: async (value) => {
+  setLastComparison: async (value): Promise<void> => {
     await memento.update(MEMENTO_KEYS.lastComparison, value);
   },
-  clearLastComparison: async () => {
+  clearLastComparison: async (): Promise<void> => {
     await memento.update(MEMENTO_KEYS.lastComparison, undefined);
   },
 });

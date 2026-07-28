@@ -7,24 +7,27 @@ import { COMMAND_TITLES, buildMenuManifest } from "../../menus";
 const PROPOSED_API_HISTORY_ITEM_MENU = "contribSourceControlHistoryItemMenu";
 
 const repoRoot = resolve(__dirname, "..", "..", "..");
-const readPackageJson = (): Record<string, unknown> =>
-  JSON.parse(readFileSync(resolve(repoRoot, "package.json"), "utf8")) as Record<string, unknown>;
 
-const getContributes = (pkg: Record<string, unknown>): Record<string, unknown> => {
-  const c = pkg["contributes"];
-  if (typeof c !== "object" || c === null) {
-    throw new Error("package.json: contributes missing");
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
+const requireRecord = (value: unknown, what: string): Record<string, unknown> => {
+  if (!isRecord(value)) {
+    throw new Error(`package.json: ${what} missing`);
   }
-  return c as Record<string, unknown>;
+  return value;
 };
 
-const getMenus = (contributes: Record<string, unknown>): Record<string, unknown> => {
-  const m = contributes["menus"];
-  if (typeof m !== "object" || m === null) {
-    throw new Error("package.json: contributes.menus missing");
-  }
-  return m as Record<string, unknown>;
+const readPackageJson = (): Record<string, unknown> => {
+  const parsed: unknown = JSON.parse(readFileSync(resolve(repoRoot, "package.json"), "utf8"));
+  return requireRecord(parsed, "root object");
 };
+
+const getContributes = (pkg: Record<string, unknown>): Record<string, unknown> =>
+  requireRecord(pkg["contributes"], "contributes");
+
+const getMenus = (contributes: Record<string, unknown>): Record<string, unknown> =>
+  requireRecord(contributes["menus"], "contributes.menus");
 
 const titlePrefixPattern = new RegExp(`^${TITLE_PREFIX.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")} `);
 
@@ -134,11 +137,8 @@ describe("menu manifest — single source of truth", () => {
   it("package.json contributes.commands lists every COMMAND_TITLES entry exactly", () => {
     const pkg = readPackageJson();
     const contributes = getContributes(pkg);
-    const cmds = contributes["commands"] as readonly {
-      readonly command: string;
-      readonly title: string;
-    }[];
-    assert.ok(Array.isArray(cmds));
+    const cmds = contributes["commands"];
+    assert.ok(Array.isArray(cmds), "package.json contributes.commands is an array");
 
     const expected = Object.entries(COMMAND_TITLES).map(([command, title]) => ({
       command,

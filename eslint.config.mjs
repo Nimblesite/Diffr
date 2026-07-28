@@ -9,6 +9,9 @@
 import eslint from "@eslint/js";
 import tseslint from "typescript-eslint";
 
+const SDK_FREE_MESSAGE =
+  "src/git/ and src/ui/uri.ts must stay SDK-free. Keep vscode access in the thin shells that wrap them.";
+
 export default tseslint.config(
   eslint.configs.recommended,
   ...tseslint.configs.strictTypeChecked,
@@ -51,6 +54,14 @@ export default tseslint.config(
       "@typescript-eslint/no-misused-spread": "error",
       "@typescript-eslint/no-unsafe-unary-minus": "error",
       "@typescript-eslint/no-array-delete": "error",
+      // Every `as` must be provably safe, not merely asserted.
+      "@typescript-eslint/no-unsafe-type-assertion": "error",
+      // Deprecated APIs are legacy; legacy is deleted.
+      "@typescript-eslint/no-deprecated": "error",
+
+      // Explicit signatures: every return type annotated, no wide param lists
+      "@typescript-eslint/explicit-function-return-type": "error",
+      "@typescript-eslint/max-params": ["error", { max: 3 }],
 
       // Async / Promise safety
       "@typescript-eslint/no-floating-promises": "error",
@@ -121,6 +132,32 @@ export default tseslint.config(
       "no-useless-return": "error",
       "prefer-template": "error",
       "object-shorthand": "error",
+    },
+  },
+  {
+    // Portability firewall: these modules must stay pure so they can move to
+    // another editor/host verbatim. Type-only imports count — they still bind
+    // the module's shape to the SDK.
+    files: ["src/git/**/*.ts", "src/ui/uri.ts"],
+    rules: {
+      "@typescript-eslint/no-restricted-imports": [
+        "error",
+        { paths: [{ name: "vscode", message: SDK_FREE_MESSAGE }] },
+      ],
+      // no-restricted-imports only walks static import/export nodes, so a
+      // dynamic `await import("vscode")` would slip through and bind these
+      // modules to the SDK at runtime with no diagnostic.
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: "ImportExpression[source.value='vscode']",
+          message: SDK_FREE_MESSAGE,
+        },
+        {
+          selector: "CallExpression[callee.name='require'][arguments.0.value='vscode']",
+          message: SDK_FREE_MESSAGE,
+        },
+      ],
     },
   },
   {

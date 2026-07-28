@@ -82,8 +82,10 @@ const handler = async ({
   });
 };
 
+export type FileRevCommand = (uri?: vscode.Uri) => Promise<void>;
+
 export const makeCompareFileWithRev =
-  ({ deps, source }: { deps: CommandDeps; source: FileRevSource }) =>
+  ({ deps, source }: { deps: CommandDeps; source: FileRevSource }): FileRevCommand =>
   async (uri?: vscode.Uri): Promise<void> => {
     await handler({ deps, uri, source });
   };

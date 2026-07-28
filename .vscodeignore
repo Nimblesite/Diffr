@@ -1,17 +1,22 @@
+# What NEVER ships in the VSIX. scripts/verify-vsix.mjs enforces this list
+# against every packaged bundle ([SWR-VSIX-VERIFY]).
+
+# Agent + IDE config — committed to the repo, irrelevant to users.
 .deslop-cache/**
 .ghissues/**
 .commandtree/**
 .claude/**
 .clinerules/**
+.cursor/**
+.windsurf/**
 .devcontainer/**
 .github/**
 .vscode/**
 .vscode-test/**
-.cursorrules
-.windsurfrules
 opencode.json
 AGENTS.md
-CLAUDE.md
+
+# Repo tooling — not part of the extension.
 .gitignore
 .prettierrc.json
 eslint.config.mjs
@@ -21,13 +26,17 @@ coverage/**
 coverage-thresholds.json
 docs/**
 scripts/**
+schemas/**
 src/**
 test-fixtures/**
+**/tsconfig*.json
+**/.eslintrc*
+node_modules/.cache/**
+
+# Sources and build by-products. Only compiled runtime JS ships: no test code,
+# no source maps, no TypeScript — declaration files included, since nothing
+# loads a .d.ts at runtime.
 out/test/**
 out/scripts/**
 **/*.map
 **/*.ts
-!out/**/*.d.ts
-**/tsconfig*.json
-**/.eslintrc*
-node_modules/.cache/**

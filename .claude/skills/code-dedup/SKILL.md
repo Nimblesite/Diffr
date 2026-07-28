@@ -2,107 +2,79 @@
 name: code-dedup
 description: Searches for duplicate code, duplicate tests, and dead code, then safely merges or removes them. Use when the user says "deduplicate", "find duplicates", "remove dead code", "DRY up", or "code dedup". Requires test coverage — refuses to touch untested code.
 ---
-<!-- agent-pmo:74cf183 -->
+<!-- agent-pmo:a72c926 -->
 
 # Code Dedup
 
-Carefully search for duplicate code, duplicate tests, and dead code across the Diffr repo. Merge duplicates and delete dead code — but only when test coverage proves the change is safe.
+Find duplicate code, duplicate tests, and dead code across Diffr. Merge duplicates and delete dead code — but only when test coverage proves the change is safe.
 
 ## Prerequisites — hard gate
 
-Before touching ANY code, verify these conditions. If any fail, stop and report why.
+Stop and report if any of these fail:
 
-1. Run `make test` — all tests must pass. If tests fail, stop. Do not dedup a broken codebase.
-2. Run `make test` — tests are fail-fast AND enforce the coverage threshold from `coverage-thresholds.json`. If anything fails, stop and fix it before deduping.
-3. Verify the project uses **static typing**. TypeScript with `tsconfig.json` `"strict": true` is required (which Diffr enforces — see CLAUDE.md). If `strict` is off, STOP and refuse.
+1. **Tests green.** Run `make test` — it packages and verifies the shipped VSIX, then runs fail-fast and enforces the coverage threshold from `coverage-thresholds.json` (REPO-STANDARDS-SPEC [TEST-RULES]). Non-zero exit = stop. Never dedup a broken or under-covered codebase. Note the current coverage % — it is the floor and must not drop.
+2. **Static typing.** `tsconfig.json` must have `"strict": true`. Confirm it before touching anything — dedup without types is too risky.
+
+## Scanner — no structural scanner available for TypeScript
+
+**deslop does not support TypeScript** (its languages are `csharp`, `rust`, `python`, `dart` — see https://deslop.live/docs/for-ai/). Diffr is pure TypeScript, so there is **no structural duplicate scanner here**.
+
+Say this up front, label every finding `(no-deslop fallback)`, and never pretend a structural scan ran. The fallback toolkit is:
+
+- **`npm run typecheck`** (`tsc -p . --noEmit`) — surfaces unused locals/parameters via the strict compiler options.
+- **`npm run lint`** (`eslint src`) — the analyzer output flags unreachable and unused code.
+- **Symbol-level grep.** For each exported symbol, `grep -rn "<symbol>" src/ scripts/` across the whole repo including tests, scripts, and `package.json` contributions.
+- **`src/menus.ts` / `scripts/sync-menus.mjs`** — command and menu contributions are generated. A command that looks unreferenced in `src/` may still be wired through `package.json`. Always check both before calling anything dead.
+
+**Rule:** every duplicate you act on must be cited in the final report by file:line for each occurrence, with the reason it is a true duplicate. No anonymous "found some duplicates".
 
 ## Steps
 
-Copy this checklist and track progress:
-
 ```
 Dedup Progress:
-- [ ] Step 1: Prerequisites passed (tests green, coverage met, strict TS)
+- [ ] Step 1: Prerequisites passed (tests green, coverage noted, strict typing confirmed)
 - [ ] Step 2: Dead code scan complete
 - [ ] Step 3: Duplicate code scan complete
 - [ ] Step 4: Duplicate test scan complete
-- [ ] Step 5: Changes applied
+- [ ] Step 5: Changes applied — one at a time, each verified
 - [ ] Step 6: Verification passed (tests green, coverage stable)
 ```
 
-### Step 1 — Inventory test coverage
-
-Before deciding what to touch, understand what is tested.
-
-1. Run `make test` to confirm green baseline. `make test` is fail-fast AND enforces the coverage threshold from `coverage-thresholds.json` (REPO-STANDARDS-SPEC [TEST-RULES], [COVERAGE-THRESHOLDS-JSON]). It exits non-zero on any test failure OR coverage shortfall.
-2. Note the current coverage percentage — this is the floor. It must not drop.
-3. Identify which files/modules have coverage and which do not. Only files WITH coverage are candidates for dedup.
+### Step 1 — Inventory coverage
+Confirm the green baseline from the prerequisites. Only files WITH coverage are candidates — leave untested files alone.
 
 ### Step 2 — Scan for dead code
-
-Search for code that is never called, never imported, never referenced.
-
-1. Look for unused exports, unused functions, unused classes, unused variables.
-2. Check TypeScript: `noUnusedLocals`/`noUnusedParameters` are already enabled in Diffr's `tsconfig.json`. Look for unexported helpers with zero references.
-3. For each candidate: **grep the entire codebase** (including `src/test/`, `package.json` `contributes`, `scripts/`, configs) for references. Only mark as dead if truly zero references.
-4. List all dead code found with file paths and line numbers. Do NOT delete yet.
+Find code never called, imported, or referenced. Use the compiler's own signal first: `npm run typecheck` for unused locals and parameters, `npm run lint` analyzer output. For each candidate, grep the whole codebase (`src/`, `src/test/`, `scripts/`, `package.json`, `.vscode-test.mjs`) — only dead if truly zero references. Remember that command IDs in `src/constants.ts` are referenced from `package.json` contributions, not just from TypeScript. List candidates with file:line. Do NOT delete yet.
 
 ### Step 3 — Scan for duplicate code
-
-Search for code blocks that do the same thing in multiple places.
-
-1. Look for functions/methods with identical or near-identical logic.
-2. Look for copy-pasted blocks (same structure, maybe different variable names).
-3. Look for multiple implementations of the same algorithm or pattern.
-4. Check across module boundaries — Diffr's layered architecture (`src/git/`, `src/ui/`, `src/providers/`, `src/commands/`) is a natural place for accidental duplication.
-5. For each duplicate pair: note both locations, what they do, and how they differ (if at all).
-6. List all duplicates found. Do NOT merge yet.
+1. Work module by module through the architecture layers: `src/git/`, `src/ui/`, `src/commands/`, `src/providers/`. Duplication clusters most often in `src/commands/` (one file per command, all glue) and `src/ui/format/`.
+2. For each candidate pair, read every occurrence in full. Structure that merely rhymes is not duplication — if two command handlers differ on a subtle condition, default, or error path, leave them and note "false positive".
+3. Record `{ occurrences[], decision, rationale }`. Do NOT merge yet.
 
 ### Step 4 — Scan for duplicate tests
-
-Search for tests that verify the same behavior.
-
-1. Look for test functions with identical assertions against the same code paths.
-2. Look for test fixtures/helpers that are duplicated across `src/test/unit/` and `src/test/suite/`.
-3. Look for E2E tests that fully cover what a unit test also covers (per CLAUDE.md, E2E is preferred — keep the E2E, mark the unit test as redundant only if E2E genuinely subsumes its coverage).
-4. List all duplicate tests found. Do NOT delete yet.
+Same as Step 3, restricted to `src/test/unit/` and `src/test/suite/`. Keep the more thorough test — per AGENTS.md the E2E test that drives real VS Code surfaces wins over a narrower unit test. Flag shared test fixtures/helpers as merge candidates rather than deletions. **Never** reduce the number of assertions.
 
 ### Step 5 — Apply changes (one at a time)
+Cycle per change: **change → `make test` → check coverage → continue or revert.**
 
-For each change, follow this cycle: **change → test → verify coverage → continue or revert**.
+**5a. Dead code:** delete, then `make test`. Non-zero exit = revert.
 
-#### 5a. Remove dead code
-- Delete dead code identified in Step 2
-- After each deletion: run `make test` (fail-fast + coverage + threshold all in one)
-- If `make test` exits non-zero (test failure OR coverage drop): **revert immediately** and investigate
-- Dead code removal should never break tests or drop coverage
+**5b. Merge duplicate code:** pick ONE cluster. Extract shared logic (respecting the layer rules in AGENTS.md — `src/git/` and `src/ui/uri.ts` must keep ZERO `vscode` imports), update call sites, `make test`. Tests fail = revert (subtle semantic difference). Coverage drops = add tests first.
 
-#### 5b. Merge duplicate code
-- For each duplicate pair: extract the shared logic into a single function/module
-- Update all call sites to use the shared version
-- After each merge: run `make test`
-- If tests fail: **revert immediately**. The duplicates may have subtle differences you missed.
-- If coverage drops: the shared code must have equivalent test coverage. Add tests if needed before proceeding.
-
-#### 5c. Remove duplicate tests
-- Delete the redundant test (keep the more thorough one)
-- After each deletion: run `make test`
-- If coverage drops below threshold, `make test` exits non-zero — **revert immediately**. The "duplicate" test was covering something the other wasn't.
+**5c. Duplicate tests:** delete the redundant test (keep the thorough one), `make test`. Coverage drop = revert (it covered something the other didn't).
 
 ### Step 6 — Final verification
-
-1. Run `make lint` — ESLint + tsc --noEmit must pass clean.
-2. Run `make test` — tests must pass AND coverage must remain ≥ the baseline from Step 1.
-3. Report: what was removed, what was merged, final coverage vs baseline.
-
-(Only the 7 standard targets exist — `make lint` and `make test` cover linting and coverage checks respectively.)
+1. `make lint` — ESLint, `tsc --noEmit`, and the shipwright.json schema check all pass.
+2. `make test` — green AND coverage ≥ the Step 1 floor.
+3. Report: every occurrence acted on (file:line, merged/deleted), and final coverage vs baseline.
 
 ## Rules
 
-- **No test coverage = do not touch.** If a file has no tests covering it, leave it alone entirely. You cannot safely dedup what you cannot verify.
-- **Coverage must not drop.** If removing or merging code causes coverage to decrease, revert and investigate. The coverage floor from Step 1 is sacred.
-- **Strict TypeScript only.** Diffr enforces `strict: true`. If that ever changes, refuse to dedup until it's re-enabled.
-- **One change at a time.** Make one dedup change, run tests, verify coverage. Never batch multiple dedup changes before testing.
-- **When in doubt, leave it.** If two code blocks look similar but you're not 100% sure they're functionally identical, leave both. False dedup is worse than duplication.
-- **Preserve public API surface.** Do not change exported function signatures, command IDs, URI scheme, or `package.json` `contributes` keys that the extension exposes.
-- **Three similar lines is fine.** Do not create abstractions for trivial duplication. Per CLAUDE.md: three similar lines is better than a premature abstraction. Only dedup when the shared logic is substantial (>10 lines) or when there are 3+ copies.
+- **No structural scanner exists for TypeScript.** Declare the `(no-deslop fallback)` mode up front; best-effort scan via compiler, linter, and symbol grep.
+- **No coverage = do not touch.** You cannot safely dedup what you cannot verify.
+- **Coverage must not drop.** The Step 1 floor is sacred — revert anything that lowers it.
+- **One change at a time.** Never batch dedup changes before testing.
+- **When in doubt, leave it.** False dedup is worse than duplication.
+- **Preserve public API.** Internal refactoring only — no changes to command IDs, the `diffr://` URI shape, or anything `package.json` contributes.
+- **Respect the layer boundaries.** Never introduce a `vscode` import into `src/git/` or `src/ui/uri.ts` in the name of sharing code.
+- **Trivial duplication is fine.** Only dedup substantial shared logic (>10 lines) or 3+ copies.
